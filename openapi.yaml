@@ -35,6 +35,8 @@ paths:
                 $ref: '#/components/schemas/Activity'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
 
   /activities/{id}:
     get:
@@ -51,6 +53,8 @@ paths:
                 $ref: '#/components/schemas/Activity'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
     put:
       summary: Update activity
       description: Update an activity owned by the authenticated athlete.
@@ -71,6 +75,21 @@ paths:
                 $ref: '#/components/schemas/Activity'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
+    delete:
+      summary: Delete Activity
+      description: Deletes an activity owned by the authenticated athlete.
+      operationId: deleteActivity
+      parameters:
+        - $ref: '#/components/parameters/ActivityId'
+      responses:
+        '204':
+          description: Activity successfully deleted. No content returned.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
 
   /activities/{id}/comments:
     get:
@@ -101,6 +120,8 @@ paths:
                   $ref: '#/components/schemas/Comment'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
 
   /activities/{id}/laps:
     get:
@@ -118,6 +139,8 @@ paths:
                   $ref: '#/components/schemas/Lap'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
 
   /activities/{id}/zones:
     get:
@@ -142,6 +165,11 @@ paths:
                   $ref: '#/components/schemas/ActivityZone'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
+
+
+
   /athlete/activities:
     get:
       summary: List athlete activities
@@ -180,6 +208,9 @@ paths:
                   $ref: '#/components/schemas/SummaryActivity'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
+        - athletes
 
   ####################################################
   # ATHLETES
@@ -196,6 +227,8 @@ paths:
                 $ref: '#/components/schemas/Athlete'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
     put:
       summary: Update authenticated athlete
       requestBody:
@@ -213,6 +246,8 @@ paths:
                 $ref: '#/components/schemas/Athlete'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
 
   /athlete/zones:
     get:
@@ -229,6 +264,8 @@ paths:
                   $ref: '#/components/schemas/Zones'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
 
   /athletes/{id}/stats:
     get:
@@ -244,6 +281,8 @@ paths:
                 $ref: '#/components/schemas/Stats'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
 
   ####################################################
   # GEAR
@@ -266,6 +305,8 @@ paths:
                 $ref: '#/components/schemas/Gear'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - gear
 
   /gear/{id}:
     get:
@@ -281,6 +322,8 @@ paths:
                 $ref: '#/components/schemas/Gear'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - gear
     put:
       summary: Update equipment
       parameters:
@@ -300,6 +343,8 @@ paths:
                 $ref: '#/components/schemas/Gear'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - gear
     delete:
       summary: Remove equipment
       parameters:
@@ -309,6 +354,8 @@ paths:
           description: Deleted — no content. :)
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - gear
 
   ####################################################
   # ROUTES
@@ -331,6 +378,8 @@ paths:
                 $ref: '#/components/schemas/Route'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
 
   /routes/{id}:
     get:
@@ -346,6 +395,45 @@ paths:
                 $ref: '#/components/schemas/Route'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+    delete:
+      summary: Delete Route
+      description: Deletes a route owned by the authenticated athlete.
+      operationId: deleteRoute
+      parameters:
+        - $ref: '#/components/parameters/RouteId'
+      responses:
+        '204':
+          description: Route successfully deleted. No content returned.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+    put:
+      summary: Update Route
+      description: Updates a route owned by the authenticated athlete.
+      operationId: updateRoute
+      parameters:
+        - $ref: '#/components/parameters/RouteId'
+      requestBody:
+        description: Route fields to update.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRouteRequest'
+      responses:
+        '200':
+          description: Updated Route object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
 
   /routes/{id}/export/gpx:
     get:
@@ -362,6 +450,8 @@ paths:
                 format: binary
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
 
   /routes/{id}/export/tcx:
     get:
@@ -378,6 +468,8 @@ paths:
                 format: binary
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
 
   /athletes/{id}/routes:
     get:
@@ -407,6 +499,9 @@ paths:
                   $ref: '#/components/schemas/Route'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+        - athletes
 
   ####################################################
   # STREAMS
@@ -441,6 +536,9 @@ paths:
                 $ref: '#/components/schemas/StreamSet'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - streams
+        - activities
 
   /routes/{id}/streams:
     get:
@@ -456,6 +554,9 @@ paths:
                 $ref: '#/components/schemas/StreamSet'
         default:
           $ref: '#/components/responses/FaultResponse'
+      tags:
+        - streams
+        - routes
 
 components:
   parameters:
@@ -674,6 +775,17 @@ components:
             - gpx
             - tcx
 
+    UpdateRouteRequest:
+      type: object
+      description: Fields for updating a route.
+      properties:
+        name:
+          type: string
+          description: The name of the route.
+        description:
+          type: string
+          description: Description of the route.
+
     UpdateAthleteRequest:
       type: object
       properties:
@@ -885,17 +997,18 @@ components:
     Stats:
       type: object
       properties:
-        biggest_ride_distance:
+        longest_run_distance:
           type: number
-          description: meters
-        biggest_climb_elevation_gain:
+          description: Longest run workout distance (meters)
+          example: 23942.39
+        biggest_run_elevation_gain:
           type: number
-          description: meters
-        recent_ride_totals:
+          description: Longest run workout elevation gain (meters)
+        week_run_totals:
           $ref: '#/components/schemas/StatsTotals'
-        ytd_ride_totals:
+        ytd_run_totals:
           $ref: '#/components/schemas/StatsTotals'
-        all_ride_totals:
+        all_run_totals:
           $ref: '#/components/schemas/StatsTotals'
 
     StatsTotals:
@@ -909,14 +1022,24 @@ components:
       properties:
         count:
           type: integer
+          description: number of workouts of this type for whatever time frame
+          example: 57
         distance:
           type: number
+          description: total distance covered over those workouts (meters)
+          example: 324938.38
         moving_time:
           type: integer
+          description: number of seconds you are moving during those workouts
+          example: 209328
         elapsed_time:
           type: integer
+          description: number of elapsed seconds (total workout running time)
+          example: 4000098
         elevation_gain:
           type: number
+          description: total elevation gain for those workouts (meters)
+          example: 20942.39
 
     Gear:
       type: object
@@ -927,25 +1050,39 @@ components:
       properties:
         id:
           type: string
-          description: Gear identifier
+          description: Gear ID
+          example: 9328492348
         name:
           type: string
+          example: Cool Shoes
+          description: user-set nickname for this gear
         description:
           type: string
+          example: Main running shoes. They cool.
+          description: user-set description for this gear
         brand_name:
           type: string
+          example: Hoka
+          description: brand name of this gear
         model_name:
           type: string
+          example: Mach 6
+          description: model or make of this gear
         primary:
           type: boolean
+          example: true
+          description: whether this is the "primary" or default gear to be used for all compatible workouts
         type:
           type: string
           enum:
             - shoes
             - bike
+          example: shoes
+          description: the machine-readable type of gear (just shoes and bike for now)
         mileage:
           type: number
-          description: meters
+          description: distance completed using this gear (meters)
+          example: 2644083.6
 
     Route:
       type: object
@@ -955,16 +1092,24 @@ components:
       properties:
         id:
           type: integer
+          example: 39480243982934
+          description: Route ID
         name:
           type: string
+          example: Cool House Loop
+          description: user-set name for this route
         description:
           type: string
+          example: Quick 4 mile loop around the house
+          description: user-set description for this route
         distance:
           type: number
-          description: meters
+          description: distance of this route in meters
+          example: 1924.23
         elevation_gain:
           type: number
-          description: meters
+          description: elevation gain for this route in meters
+          example: 123
         map:
           $ref: '#/components/schemas/Map'
         athlete:
@@ -972,32 +1117,34 @@ components:
         created_at:
           type: string
           format: date-time
+          description: when the Route was created
+          example: 2025-08-08T15:20:23Z
 
     Map:
       type: object
       properties:
         id:
-          type: string
+          type: integer
         polyline:
           type: string
+          example: ki{eFvqfiVqAWQIGEEKAYJgBVqDJ{BHa@jAkNJw@Pw@V{APs@^aABQAOEQGKoJ_FuJkFqAo@{A}@sH{DiAs@Q]?WVy@`@oBt@_CB]KYMMkB{AQEI@WT{BlE{@zAQPI@ICsCqA_BcAeCmAaFmCqIoEcLeG}KcG}A}@cDaBiDsByAkAuBqBi@y@_@o@o@kB}BgIoA_EUkAMcACa@BeBBq@LaAJe@b@uA`@_AdBcD`@iAPq@RgALqAB{@EqAyAoOCy@AmCBmANqBLqAZkB\\iCPiBJwCCsASiCq@iD]eA]y@[i@w@mAa@i@k@g@kAw@i@Ya@Q]EWFMLa@~BYpAFNpA`Aj@n@X`@V`AHh@JfB@xAMvAGZGHIDIAWOEQNcC@sACYK[MSOMe@QKKKYOs@UYQISCQ?Q@WNo@r@OHGAGCKOQ_BU}@MQGG]Io@@c@FYNg@d@s@d@ODQAMOMaASs@_@a@SESAQDqBn@a@RO?KK?UBU\\kA@Y?WMo@Iy@GWQ_@WSSGg@AkABQB_Ap@_A^o@b@Q@o@IS@OHi@n@OFS?OI}@iAQMQGQC}@DOIIUK{@IUOMyBo@kASOKIQCa@L[|AgATWN[He@?QKw@FOPCh@Fx@l@TDLELKl@aAHIJEX@r@ZTDV@LENQVg@RkA@c@MeA?WFOPMf@Ej@Fj@@LGHKDM?_@_@iC?a@HKRIl@NT?FCHMFW?YEYGWQa@GYBiAIq@Gq@L_BHSHK|@WJETSLQZs@z@_A~@uA^U`@G\\CRB\\Tl@p@Th@JZ^bB`@lAHLXVLDP?LGFSKiDBo@d@wBVi@R]VYVE\\@`@Lh@Fh@CzAk@RSDQA]GYe@eAGWSiBAWBWBIJORK`@KPOPSTg@h@}Ad@o@F[E_@EGMKUGmAEYGMIMYKs@?a@J}@@_BD_@HQJMx@e@LKHKHWAo@UoAAWFmAH}@?w@C[YwAAc@HSNM|Ao@rA}@zAq@`@a@j@eAxAuBXQj@MXSR[b@gAFg@?YISOGaAHi@Xw@v@_@d@WRSFqARUHQJc@d@m@`A[VSFUBcAEU@WFULUPa@v@Y~@UrBc@dBI~@?l@P~ABt@N`HEjA]zAEp@@p@TrBCl@CTQb@k@dAg@jAU^KJYLK@k@A[Js@d@a@b@]RgBl@[FMAw@[]G]?m@D_@F]P[Vu@t@[TMF_@Do@E_@@q@P]PWZUZw@vAkAlAGJOj@IlAMd@OR{@p@a@d@sBpD]v@a@`Aa@n@]TODgBVk@Pe@^cBfBc@Rs@La@RSPm@|@wCpDS^Wp@QZML{@l@qBbCYd@k@lAIVCZBZNTr@`@RRHZANIZQPKDW@e@CaASU?I@YTKRQx@@\\VmALYRQLCL?v@P|@D\\GJEFKDM@OCa@COOYIGm@YMUCM@]JYr@uAx@kAt@}@jAeAPWbAkBj@s@bAiAz@oAj@m@VQlAc@VQ~@aA`Au@p@Q`AIv@MZORUV_@p@iB|AoCh@q@dAaANUNWH[N{AJ[^m@t@_Av@wA\\a@`@W`@In@Al@B^E`@Wl@u@\\[VQ\\K`@Eb@?R@dAZP@d@CRExAs@\\Yt@{@LG\\MjAATINOXo@d@kAl@_AHYBOCe@QiBCm@Fq@\\wADo@AyGEeBWuB@YHu@Tu@Lk@VcCTo@d@aA\\WJE`@G~@FP?VI\\U~@sANO`@SfAMj@U\\WjAsAXS`@UNENALBHFFL?^Ml@Uj@]b@q@RUJSPkChEc@XcAb@sA|@]PaA\\OJKNER?TDTNj@Jn@?p@OfC@ZR`B@VCV_@n@{@l@WbACv@OlABnAPl@LNNHbBBNBLFFJ@^GLg@x@i@|AMP[X}@XOJKPET?l@LhAFXp@fBDRCd@S\\_@Ps@PQ@}A]S?QDe@V]b@MR[fAKt@ErAF~CANILYDKGIKe@{@Yy@e@sB[gA[c@e@YUCU?WBUHUNQPq@`AiArAMV[^e@Zc@JQJKNMz@?r@Bb@PfAAfA@VVbADn@E`@KHSEe@SMAKDKFM\\^dDCh@m@LoAQ_@@MFOZLfBEl@QbASd@KLQBOAaAc@QAQ@QHc@v@ONMJOBOCg@c@]O[EMBKFGL?RHv@ARERGNe@h@{@h@WVGNDt@JLNFPFz@LdBf@f@PJNHPF`ADPJJJDl@I`@B^Tp@bALJNDNALIf@i@PGPCt@DNE`@Uv@[dAw@RITGRCtAARBPJLPJRZxB?VEX_@vAAR?RDNHJJBh@UnBm@h@IRDRJNNJPNbBFRJLLBLCzAmAd@Uf@Gf@?P@PFJNHPFTH`BDTHNJJJ@LG`@m@^YPER@RDPHNNJRLn@HRLN^VNPHTFX@\\UlDFb@FHh@NP@HKPsB?}ASkCQ{@[y@q@}@cA{@KOCQDa@t@{CFGJCf@Nl@ZtA~@r@p@`@h@rAxBd@rA\\fARdAPjANrB?f@AtBCd@QfBkAjJOlBChA?rBFrBNlBdAfKFzAC~@Iz@Mz@Sv@s@jBmAxBi@hAWt@Sv@Qx@O`BA`@?dAPfBVpAd@`BfBlFf@fBdA~Cr@pAz@fApBhBjAt@H?IL?FBFJLx@^lHvDvh@~XnElCbAd@pGhDbAb@nAr@`Ad@`GhDnBbAxCbBrWhNJJDPARGP_@t@Qh@]pAUtAoA`Ny@jJApBBNFLJFJBv@Hb@HBF?\\
+          description: The polyline representation of the map
         summary_polyline:
           type: string
+          example: ki{eFvqfiVsBmA`Feh@qg@iX`B}JeCcCqGjIq~@kf@cM{KeHeX`@_GdGkSeBiXtB}YuEkPwFyDeAzAe@pC~DfGc@bIOsGmCcEiD~@oBuEkFhBcBmDiEfAVuDiAuD}NnDaNiIlCyDD_CtJKv@wGhD]YyEzBo@g@uKxGmHpCGtEtI~AuLrHkAcAaIvEgH_EaDR_FpBuBg@sNxHqEtHgLoTpIiCzKNr[sB|Es\\`JyObYeMbGsMnPsAfDxAnD}DBu@bCx@{BbEEyAoD`AmChNoQzMoGhOwX|[yIzBeFKg[zAkIdU_LiHxK}HzEh@vM_BtBg@xGzDbCcF~GhArHaIfByAhLsDiJuC?_HbHd@nL_Cz@ZnEkDDy@hHwJLiCbIrNrIvN_EfAjDWlEnEiAfBxDlFkBfBtEfDaAzBvDKdFx@|@XgJmDsHhAgD`GfElEzOwBnYdBxXgGlSc@bGdHpW|HdJztBnhAgFxc@HnCvBdA
+          description: A downsampled version of polyline
 
     StreamSet:
       type: object
       properties:
         streams:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Stream'
-        # If key_by_type requested, the map keys are stream types.
+          $ref: '#/components/schemas/Stream'
 
     Stream:
       type: object
       properties:
         type:
-          type: string
-          description: stream type, e.g., "latlng", "time", "distance", "heartrate", "altitude"
+          $ref: '#/components/schemas/StreamType'
         data:
           type: array
           items:
@@ -1006,16 +1153,22 @@ components:
               - type: array
                 items:
                   type: number
+          example: [904.5, 957.8, 963.1, 989.1, 1011.9, 1049.7, 1082.4, 1098.1, 1113.2, 1124.7, 1139.2, 1142.1, 1170.4, 1173]
+          description: the data in the stream
         series_type:
           type: string
         original_size:
           type: integer
+          example: 14
+          description: the number of data points in this stream
         resolution:
           type: string
           enum:
             - low
             - medium
             - high
+          example: medium
+          description: the resolution of the data (time between data points)
 
     Zones:
       type: object
@@ -1056,6 +1209,7 @@ components:
             - heart_rate
             - power
           description: The type of zone data.
+          example: power
         score:
           type: integer
           description: Score for the zone distribution (if available).
@@ -1068,15 +1222,19 @@ components:
               min:
                 type: number
                 description: Lower bound of the zone.
+                example: 165
               max:
                 type: number
                 description: Upper bound of the zone.
+                example: 185
               time:
                 type: integer
                 description: Time spent in this zone in seconds.
+                example: 254
         sensor_based:
           type: boolean
           description: Whether the zone data is derived from a physical sensor.
+          example: true
 
     Fault:
       type: object
@@ -1086,8 +1244,12 @@ components:
       properties:
         code:
           type: integer
+          example: 400
+          description: HTTP code returned by the request (for redundancy)
         message:
           type: string
+          example: Invalid input provided
+          description: A description of what caused the request to fail
         errors:
           type: array
           items:
@@ -1098,10 +1260,20 @@ components:
       properties:
         resource:
           type: string
+          example: Athlete
+          description: Which part of the request (or part of the underlying server architecture) caused this error
         field:
           type: string
+          example: email
+          description: The field (or subsection of a component) that caused the error
         code:
           type: string
+          example: invalid
+          description: A machine and human readable code describing what happened
+        description:
+          type: string
+          example: Athlete email did not match regex
+          description: A human-readable error
 
     ####################################################
     # ENUM-LIKE PRIMITIVE REFS
@@ -1118,6 +1290,7 @@ components:
         - workout
         - virtual_run
         - virtual_ride
+      example: run
     StreamType:
       type: string
       description: Type of data stream to retrieve.
@@ -1130,6 +1303,7 @@ components:
         - cadence
         - watts
         - temp
+      example: distance
 
     Visibility:
       type: string
@@ -1138,6 +1312,7 @@ components:
         - me
         - everyone
       description: Visibility level for an activity
+      example: everyone
 
     ActivityTag:
       type: string
@@ -1153,8 +1328,8 @@ components:
         - recovery
         - virtual
         - group
-        - personal_record
         - workout
+      example: training
 
 security: []
 tags:
