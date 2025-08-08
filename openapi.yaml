@@ -91,38 +91,6 @@ paths:
       tags:
         - activities
 
-  /activities/{id}/comments:
-    get:
-      summary: List activity comments
-      parameters:
-        - $ref: '#/components/parameters/ActivityId'
-        - name: page_size
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 50
-            default: 10
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
-            minimum: 0
-      responses:
-        "200":
-          description: OK — array of Comment objects.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Comment'
-        default:
-          $ref: '#/components/responses/FaultResponse'
-      tags:
-        - activities
-
   /activities/{id}/laps:
     get:
       summary: List activity laps
@@ -1334,7 +1302,7 @@ components:
 security: []
 tags:
   - name: activities
-    description: Activity CRUD, streams, laps, comments
+    description: Activity CRUD, streams, laps
   - name: athletes
     description: Athlete profile and stats
   - name: gear
