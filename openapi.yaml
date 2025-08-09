@@ -252,6 +252,98 @@ paths:
       tags:
         - athletes
 
+
+  /athletes/{id}/follow:
+    post:
+      summary: Follow an athlete
+      description: Start following the specified athlete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Athlete followed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AthleteSummary'
+    delete:
+      summary: Unfollow an athlete
+      description: Stop following the specified athlete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Athlete unfollowed successfully.
+
+  /athletes/{id}/followers:
+    get:
+      summary: Get followers of an athlete
+      description: Returns a list of athletes who follow the specified athlete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of followers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteSummary'
+
+  /athletes/{id}/following:
+    get:
+      summary: Get athletes an athlete is following
+      description: Returns a list of athletes the specified athlete is following.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of followed athletes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteSummary'
+
+  /athletes/{id}/friends:
+    get:
+      summary: Get mutual friends of an athlete
+      description: Returns a list of athletes who follow and are followed by the specified athlete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of mutual friends.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteSummary'
+
+
   ####################################################
   # GEAR
   ####################################################
@@ -790,6 +882,12 @@ components:
           $ref: '#/components/schemas/ActivityType'
         visibility:
           $ref: '#/components/schemas/Visibility'
+        invisible:
+          type: bool
+          default: false
+          description: |
+            If true, don't use this activity in relative effort or other calculations.
+            Visibility still governs who can see this activity though
         description:
           type: string
         distance:
@@ -1179,9 +1277,6 @@ components:
             - power
           description: The type of zone data.
           example: power
-        score:
-          type: integer
-          description: Score for the zone distribution (if available).
         distribution_buckets:
           type: array
           description: Array of time spent in each zone.
@@ -1282,6 +1377,7 @@ components:
           type: string
           enum:
             - followers
+            - friends
             - me
             - everyone
             - whitelist
@@ -1320,6 +1416,71 @@ components:
         - virtual
         - workout
       example: training
+    
+
+    ClubSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The club's unique identifier.
+        name:
+          type: string
+          description: The club's name.
+        profile_medium:
+          type: string
+          format: uri
+          description: URL to a 60x60 pixel profile picture.
+        cover_photo:
+          type: string
+          format: uri
+          description: URL to a cover photo.
+        activities:
+          type: array
+          description: The activity types that count for a club. Takes precedence over sport_type.
+          items:
+            $ref: '#/components/schemas/ActivityType'
+        city:
+          type: string
+          description: The club's city.
+        state:
+          type: string
+          description: The club's state or geographical region.
+        country:
+          type: string
+          description: The club's country.
+        private:
+          type: boolean
+          description: Whether the club is private.
+        member_count:
+          type: integer
+          description: The club's member count.
+        verified:
+          type: boolean
+          description: Whether the club is verified or not.
+        url:
+          type: string
+          description: The club's vanity URL.
+
+    ClubDetail:
+      allOf:
+        - $ref: '#/components/schemas/ClubSummary'
+        - type: object
+          properties:
+            membership:
+              type: string
+              enum: [ member, pending ]
+              description: The membership status of the logged-in athlete.
+            admin:
+              type: boolean
+              description: Whether the currently logged-in athlete is an administrator of this club.
+            owner:
+              type: boolean
+              description: Whether the currently logged-in athlete is the owner of this club.
+            following_count:
+              type: integer
+              description: The number of athletes in the club that the logged-in athlete follows.
+
 
 security: []
 tags:
