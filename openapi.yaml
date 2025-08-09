@@ -11,7 +11,6 @@ servers:
   - url: https://localhost:8000/api/
     description: Production server
 
-
 paths:
   /activities:
     post:
@@ -116,12 +115,7 @@ paths:
       description: Returns heart rate and/or power zones for a specific activity, including time spent in each zone.
       operationId: getActivityZones
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: The activity identifier.
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/ActivityId'
       responses:
         '200':
           description: Array of zone information for the activity.
@@ -136,7 +130,25 @@ paths:
       tags:
         - activities
 
-
+  /activities/{id}/report:
+    post:
+      summary: Report an activity
+      description: Report an activity for abuse or other issues.
+      parameters:
+        - $ref: '#/components/parameters/ActivityId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        "200":
+          description: Reported successfully.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
 
   /athlete/activities:
     get:
@@ -145,26 +157,32 @@ paths:
       parameters:
         - name: before
           in: query
+          description: Epoch timestamp (seconds) — return activities before this time.
           schema:
             type: integer
-            description: Epoch timestamp (seconds) — return activities before this time.
+            example: 1723171200
         - name: after
           in: query
+          description: Epoch timestamp (seconds) — return activities after this time.
           schema:
             type: integer
-            description: Epoch timestamp (seconds) — return activities after this time.
+            example: 1722480000
         - name: page
           in: query
+          description: Page number for pagination.
           schema:
             type: integer
             default: 1
+            example: 1
         - name: page_size
           in: query
+          description: Number of activities per page.
           schema:
             type: integer
             default: 10
             maximum: 50
             minimum: 1
+            example: 10
       responses:
         "200":
           description: OK — array of SummaryActivity objects.
@@ -180,9 +198,6 @@ paths:
         - activities
         - athletes
 
-  ####################################################
-  # ATHLETES
-  ####################################################
   /athlete:
     get:
       summary: Get authenticated athlete
@@ -252,17 +267,12 @@ paths:
       tags:
         - athletes
 
-
   /athletes/{id}/follow:
     post:
       summary: Follow an athlete
       description: Start following the specified athlete.
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/AthleteId'
       responses:
         '200':
           description: Athlete followed successfully.
@@ -270,29 +280,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AthleteSummary'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
     delete:
       summary: Unfollow an athlete
       description: Stop following the specified athlete.
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/AthleteId'
       responses:
         '204':
           description: Athlete unfollowed successfully.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
 
   /athletes/{id}/followers:
     get:
       summary: Get followers of an athlete
       description: Returns a list of athletes who follow the specified athlete.
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/AthleteId'
       responses:
         '200':
           description: A list of followers.
@@ -302,17 +312,17 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AthleteSummary'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
 
   /athletes/{id}/following:
     get:
       summary: Get athletes an athlete is following
       description: Returns a list of athletes the specified athlete is following.
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/AthleteId'
       responses:
         '200':
           description: A list of followed athletes.
@@ -322,17 +332,17 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AthleteSummary'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
 
   /athletes/{id}/friends:
     get:
       summary: Get mutual friends of an athlete
       description: Returns a list of athletes who follow and are followed by the specified athlete.
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/AthleteId'
       responses:
         '200':
           description: A list of mutual friends.
@@ -342,11 +352,73 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AthleteSummary'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
 
+  /athletes/{id}/report:
+    post:
+      summary: Report an athlete
+      description: Report an athlete for abuse or other issues.
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        "200":
+          description: Reported successfully.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
 
-  ####################################################
-  # GEAR
-  ####################################################
+  /athletes/search:
+    get:
+      summary: Search athletes
+      description: Search by name, username, tags
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Search query for name, username, or tags.
+          schema:
+            type: string
+            example: "John Doe"
+        - name: page
+          in: query
+          description: Page number for pagination.
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: page_size
+          in: query
+          description: Number of results per page.
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+            minimum: 1
+            example: 10
+      responses:
+        "200":
+          description: OK — array of AthleteSummary objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteSummary'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+
   /gear:
     post:
       summary: Add equipment
@@ -410,16 +482,13 @@ paths:
       parameters:
         - $ref: '#/components/parameters/GearId'
       responses:
-        "200":
-          description: Deleted — no content. :)
+        "204":
+          description: Equipment successfully deleted. No content returned.
         default:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - gear
 
-  ####################################################
-  # ROUTES
-  ####################################################
   /routes:
     post:
       summary: Create route
@@ -531,6 +600,26 @@ paths:
       tags:
         - routes
 
+  /routes/{id}/report:
+    post:
+      summary: Report a route
+      description: Report a route for abuse or other issues.
+      parameters:
+        - $ref: '#/components/parameters/RouteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        "200":
+          description: Reported successfully.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+
   /athletes/{id}/routes:
     get:
       summary: List athlete routes
@@ -538,16 +627,20 @@ paths:
         - $ref: '#/components/parameters/AthleteId'
         - name: page
           in: query
+          description: Page number for pagination.
           schema:
             type: integer
             default: 1
+            example: 1
         - name: page_size
           in: query
+          description: Number of routes per page.
           schema:
             type: integer
             default: 30
             maximum: 50
             minimum: 1
+            example: 30
       responses:
         "200":
           description: OK — array of Route objects.
@@ -563,9 +656,295 @@ paths:
         - routes
         - athletes
 
-  ####################################################
-  # STREAMS
-  ####################################################
+  /clubs:
+    post:
+      summary: Create a club
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClubRequest'
+      responses:
+        "201":
+          description: Created — Club object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Club'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+
+  /clubs/{id}:
+    get:
+      summary: Get club details
+      description: Get club details (summary, members, tags)
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+      responses:
+        "200":
+          description: OK — Club object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Club'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+    patch:
+      summary: Update club details
+      description: Update club details (admin only)
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClubRequest'
+      responses:
+        "200":
+          description: OK — updated Club object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Club'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+    delete:
+      summary: Delete a club
+      description: Delete a club (admin only)
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+      responses:
+        '204':
+          description: Club successfully deleted. No content returned.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+
+  /clubs/{id}/leaderboard:
+    get:
+      summary: Club leaderboard
+      description: Club leaderboard (distance/time/pace/etc.)
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+        - name: metric
+          in: query
+          description: The metric to sort the leaderboard by.
+          schema:
+            type: string
+            enum:
+              - distance
+              - time
+              - pace
+              - elevation
+            default: distance
+            example: distance
+      responses:
+        "200":
+          description: OK — array of LeaderboardEntry objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+
+  /clubs/{id}/posts:
+    get:
+      summary: List posts in a club
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+        - name: page
+          in: query
+          description: Page number for pagination.
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: page_size
+          in: query
+          description: Number of posts per page.
+          schema:
+            type: integer
+            default: 10
+            example: 10
+      responses:
+        "200":
+          description: OK — array of ClubPost objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClubPost'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+    post:
+      summary: Create a post in a club
+      description: Create a post in a club (admin only)
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClubPostRequest'
+      responses:
+        "201":
+          description: Created — ClubPost object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubPost'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+
+  /clubs/{id}/members:
+    get:
+      summary: List members
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+        - name: page
+          in: query
+          description: Page number for pagination.
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: page_size
+          in: query
+          description: Number of members per page.
+          schema:
+            type: integer
+            default: 30
+            example: 30
+      responses:
+        "200":
+          description: OK — array of ClubAthlete objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClubAthlete'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+
+  /clubs/{id}/join:
+    post:
+      summary: Join a club
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+      responses:
+        "200":
+          description: Joined successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Club'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+
+  /clubs/{id}/leave:
+    delete:
+      summary: Leave a club
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+      responses:
+        '204':
+          description: Left successfully.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+
+  /clubs/{id}/report:
+    post:
+      summary: Report a club
+      description: Report a club for abuse or other issues.
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        "200":
+          description: Reported successfully.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+
+  /clubs/{id}/invite:
+    patch:
+      summary: Invite to club
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - athlete_id
+              properties:
+                athlete_id:
+                  type: integer
+                  description: The ID of the athlete to invite.
+                  example: 12345
+      responses:
+        "200":
+          description: Invited successfully.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+
+  /clubs/{id}/kick/{userId}:
+    delete:
+      summary: Kick user from club
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+        - name: userId
+          in: path
+          required: true
+          description: Athlete ID to kick.
+          schema:
+            type: integer
+            example: 12345
+      responses:
+        '204':
+          description: User kicked successfully.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+
   /activities/{id}/streams:
     get:
       summary: Get activity streams
@@ -575,18 +954,20 @@ paths:
         - name: keys
           in: query
           required: true
+          description: Array of StreamTypes to retrieve.
           schema:
             type: array
             items:
               $ref: '#/components/schemas/StreamType'
-            description: Array of StreamTypes
+            example: ["time", "distance"]
           style: form
         - name: key_by_type
           in: query
           required: true
+          description: Must be true to key streams by type.
           schema:
             type: boolean
-            description: Must be true.
+            example: true
       responses:
         "200":
           description: OK — StreamSet object.
@@ -624,30 +1005,42 @@ components:
       name: id
       in: path
       required: true
+      description: Activity identifier
       schema:
         type: integer
-      description: Activity identifier
+        example: 12345
     AthleteId:
       name: id
       in: path
       required: true
+      description: Athlete identifier
       schema:
         type: integer
-      description: Athlete identifier
+        example: 67890
     GearId:
       name: id
       in: path
       required: true
+      description: Gear identifier
       schema:
         type: string
-      description: Gear identifier
+        example: "g123456"
     RouteId:
       name: id
       in: path
       required: true
+      description: Route identifier
       schema:
         type: integer
-      description: Route identifier
+        example: 112233
+    ClubId:
+      name: id
+      in: path
+      required: true
+      description: Club identifier
+      schema:
+        type: integer
+        example: 445566
 
   responses:
     FaultResponse:
@@ -658,9 +1051,6 @@ components:
             $ref: '#/components/schemas/Fault'
 
   schemas:
-    ####################################################
-    # REQUEST BODIES
-    ####################################################
     CreateActivityRequest:
       type: object
       required:
@@ -670,39 +1060,46 @@ components:
       properties:
         name:
           type: string
+          description: The name of the activity.
           example: "Morning Run"
         type:
           $ref: '#/components/schemas/ActivityType'
         visibility:
           $ref: '#/components/schemas/Visibility'
-          default: everyone
         description:
           type: string
+          description: A detailed description of the activity.
+          example: "A refreshing morning run in the park."
         hidden_stats:
           type: array
           items:
             type: string
-            example: "heartrate"
+          description: Stats to hide from public view.
+          example: ["heartrate"]
         tags:
           type: array
           items:
             $ref: '#/components/schemas/ActivityTag'
         gear_id:
           type: string
+          description: ID of the gear used.
+          example: "g123456"
         start_time:
           type: string
           format: date-time
+          description: Start time of the activity.
           example: "2025-08-08T07:00:00Z"
         elapsed_time:
           type: integer
-          description: Duration in seconds
+          description: Duration in seconds.
           example: 3600
         distance:
           type: number
-          description: Meters
+          description: Meters.
           example: 10000.0
         elevation_gained:
           type: number
+          description: Total elevation gained in meters.
           example: 150.5
 
     CreateActivityFileRequest:
@@ -714,24 +1111,30 @@ components:
       properties:
         name:
           type: string
+          description: The name of the activity.
           example: "Trail Run"
         type:
           $ref: '#/components/schemas/ActivityType'
         visibility:
           $ref: '#/components/schemas/Visibility'
-          default: everyone
         description:
           type: string
+          description: A detailed description of the activity.
+          example: "Challenging trail run."
         hidden_stats:
           type: array
           items:
             type: string
+          description: Stats to hide.
+          example: ["power"]
         tags:
           type: array
           items:
             $ref: '#/components/schemas/ActivityTag'
         gear_id:
           type: string
+          description: Gear ID.
+          example: "g789012"
         file:
           type: string
           format: binary
@@ -742,30 +1145,44 @@ components:
             - tcx
             - gpx
             - fit
+          description: Type of the uploaded file.
+          example: "gpx"
 
     UpdateActivityRequest:
       type: object
       properties:
         name:
           type: string
+          description: Updated name of the activity.
+          example: "Updated Morning Run"
         type:
           $ref: '#/components/schemas/ActivityType'
         visibility:
           $ref: '#/components/schemas/Visibility'
         description:
           type: string
+          description: Updated description.
+          example: "Updated description."
         gear_id:
           type: string
+          description: Updated gear ID.
+          example: "g345678"
         tags:
           type: array
           items:
             $ref: '#/components/schemas/ActivityTag'
         distance:
           type: number
+          description: Updated distance in meters.
+          example: 12000.0
         elapsed_time:
           type: integer
+          description: Updated elapsed time in seconds.
+          example: 4000
         elevation_gained:
           type: number
+          description: Updated elevation gained in meters.
+          example: 200.0
 
     CreateGearRequest:
       type: object
@@ -775,24 +1192,35 @@ components:
       properties:
         name:
           type: string
+          description: Name of the gear.
           example: "Cool Shoes"
         description:
           type: string
+          description: Description of the gear.
+          example: "Comfortable running shoes."
         brand_name:
           type: string
+          description: Brand of the gear.
+          example: "Hoka"
         model_name:
           type: string
+          description: Model of the gear.
+          example: "Mach 6"
         primary:
           type: boolean
           default: false
+          description: Whether this is the primary gear.
+          example: true
         type:
           type: string
           enum:
             - shoes
             - bike
+          description: Type of gear.
+          example: "shoes"
         mileage:
           type: number
-          description: Starting mileage in meters
+          description: Starting mileage in meters.
           example: 0
 
     UpdateGearRequest:
@@ -800,21 +1228,35 @@ components:
       properties:
         name:
           type: string
+          description: Updated name.
+          example: "Updated Cool Shoes"
         description:
           type: string
+          description: Updated description.
+          example: "Updated comfortable shoes."
         brand_name:
           type: string
+          description: Updated brand.
+          example: "Nike"
         model_name:
           type: string
+          description: Updated model.
+          example: "Pegasus"
         primary:
           type: boolean
+          description: Updated primary status.
+          example: false
         type:
           type: string
           enum:
             - shoes
             - bike
+          description: Updated type.
+          example: "bike"
         mileage:
           type: number
+          description: Updated mileage.
+          example: 10000.0
 
     CreateRouteRequest:
       type: object
@@ -823,8 +1265,12 @@ components:
       properties:
         name:
           type: string
+          description: Name of the route.
+          example: "Scenic Route"
         description:
           type: string
+          description: Description of the route.
+          example: "Beautiful scenic path."
         file:
           type: string
           format: binary
@@ -834,6 +1280,8 @@ components:
           enum:
             - gpx
             - tcx
+          description: Type of file.
+          example: "gpx"
 
     UpdateRouteRequest:
       type: object
@@ -842,9 +1290,11 @@ components:
         name:
           type: string
           description: The name of the route.
+          example: "Updated Scenic Route"
         description:
           type: string
           description: Description of the route.
+          example: "Updated beautiful path."
 
     UpdateAthleteRequest:
       type: object
@@ -852,18 +1302,148 @@ components:
         weight:
           type: number
           description: kilograms
+          example: 70.5
         display_name:
           type: string
+          description: Display name.
+          example: "RunnerJoe"
         bio:
           type: string
+          description: Bio of the athlete.
+          example: "Avid runner."
         location:
           type: string
+          description: Location.
+          example: "New York"
         default_sport:
           $ref: '#/components/schemas/ActivityType'
 
-    ####################################################
-    # CORE MODELS
-    ####################################################
+    CreateClubRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of the club.
+          example: "Running Club"
+        profile_medium:
+          type: string
+          format: uri
+          description: URL to profile picture.
+          example: "https://example.com/profile.jpg"
+        cover_photo:
+          type: string
+          format: uri
+          description: URL to cover photo.
+          example: "https://example.com/cover.jpg"
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityType'
+          description: Activity types for the club.
+          example: ["run", "ride"]
+        city:
+          type: string
+          description: City of the club.
+          example: "Boston"
+        state:
+          type: string
+          description: State or region.
+          example: "Massachusetts"
+        country:
+          type: string
+          description: Country.
+          example: "USA"
+        private:
+          type: boolean
+          description: Whether the club is private.
+          example: false
+        url:
+          type: string
+          description: Vanity URL.
+          example: "runningclub"
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags for the club.
+          example: ["running", "fitness"]
+
+    UpdateClubRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Updated name.
+          example: "Updated Running Club"
+        profile_medium:
+          type: string
+          format: uri
+          description: Updated profile URL.
+          example: "https://example.com/newprofile.jpg"
+        cover_photo:
+          type: string
+          format: uri
+          description: Updated cover URL.
+          example: "https://example.com/newcover.jpg"
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityType'
+          description: Updated activities.
+          example: ["run", "swim"]
+        city:
+          type: string
+          description: Updated city.
+          example: "New York"
+        state:
+          type: string
+          description: Updated state.
+          example: "New York"
+        country:
+          type: string
+          description: Updated country.
+          example: "USA"
+        private:
+          type: boolean
+          description: Updated privacy.
+          example: true
+        url:
+          type: string
+          description: Updated URL.
+          example: "updatedrunningclub"
+        tags:
+          type: array
+          items:
+            type: string
+          description: Updated tags.
+          example: ["marathon", "training"]
+
+    CreateClubPostRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: Text content of the post.
+          example: "Upcoming group run!"
+
+    ReportRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          description: Reason for the report.
+          example: "Inappropriate content"
+        description:
+          type: string
+          description: Detailed description of the issue.
+          example: "The content violates community guidelines."
+
     Activity:
       type: object
       required:
@@ -875,9 +1455,12 @@ components:
       properties:
         id:
           type: integer
+          description: Unique identifier for the activity.
           example: 12345
         name:
           type: string
+          description: Name of the activity.
+          example: "Morning Run"
         type:
           $ref: '#/components/schemas/ActivityType'
         visibility:
@@ -885,34 +1468,45 @@ components:
         invisible:
           type: boolean
           default: false
-          description: |
-            If true, don't use this activity in relative effort or other calculations.
-            Visibility still governs who can see this activity though
+          description: If true, don't use this activity in relative effort or other calculations. Visibility still governs who can see this activity though
+          example: false
         description:
           type: string
+          description: Description of the activity.
+          example: "Easy run"
         distance:
           type: number
           description: meters
+          example: 5000.0
         elapsed_time:
           type: integer
           description: seconds
+          example: 1800
         moving_time:
           type: integer
           description: seconds
+          example: 1700
         start_time:
           type: string
           format: date-time
+          description: Start time.
+          example: "2025-08-09T08:00:00Z"
         elevation_gained:
           type: number
           description: meters
+          example: 100.0
         average_speed:
           type: number
           description: meters/second
+          example: 2.78
         max_speed:
           type: number
           description: meters/second
+          example: 4.0
         gear_id:
           type: string
+          description: Gear used.
+          example: "g123"
         tags:
           type: array
           items:
@@ -921,6 +1515,8 @@ components:
           type: array
           items:
             type: string
+          description: Hidden stats.
+          example: ["heartrate"]
         laps:
           type: array
           items:
@@ -941,17 +1537,27 @@ components:
       properties:
         id:
           type: integer
+          description: ID.
+          example: 12345
         name:
           type: string
+          description: Name.
+          example: "Run"
         type:
           $ref: '#/components/schemas/ActivityType'
         distance:
           type: number
+          description: Distance.
+          example: 10000.0
         elapsed_time:
           type: integer
+          description: Elapsed time.
+          example: 3600
         start_time:
           type: string
           format: date-time
+          description: Start time.
+          example: "2025-08-09T07:00:00Z"
         visibility:
           $ref: '#/components/schemas/Visibility'
 
@@ -966,15 +1572,23 @@ components:
       properties:
         id:
           type: integer
+          description: Comment ID.
+          example: 987
         activity_id:
           type: integer
+          description: Activity ID.
+          example: 12345
         athlete:
           $ref: '#/components/schemas/AthleteSummary'
         text:
           type: string
+          description: Comment text.
+          example: "Great run!"
         created_at:
           type: string
           format: date-time
+          description: Creation time.
+          example: "2025-08-09T10:00:00Z"
 
     Lap:
       type: object
@@ -986,60 +1600,69 @@ components:
       properties:
         lap_index:
           type: integer
+          description: Index of the lap.
+          example: 1
         distance:
           type: number
           description: meters
+          example: 1000.0
         elapsed_time:
           type: integer
           description: seconds
+          example: 300
         moving_time:
           type: integer
+          description: Moving time in seconds.
+          example: 290
         average_speed:
           type: number
+          description: Average speed in m/s.
+          example: 3.33
         max_speed:
           type: number
+          description: Max speed in m/s.
+          example: 4.0
         start_time:
           type: string
           format: date-time
+          description: Start time of lap.
+          example: "2025-08-09T07:00:00Z"
 
     Athlete:
-      type: object
-      required:
-        - id
-        - firstname
-        - lastname
-      properties:
-        id:
-          type: integer
-        username:
-          type: string
-        firstname:
-          type: string
-        lastname:
-          type: string
-        profile_image_url:
-          type: string
-          format: uri
-        city:
-          type: string
-        state:
-          type: string
-        country:
-          type: string
-        weight:
-          type: number
-          description: kilograms
-        bikes:
-          type: array
-          items:
-            $ref: '#/components/schemas/Gear'
-        shoes:
-          type: array
-          items:
-            $ref: '#/components/schemas/Gear'
-        created_at:
-          type: string
-          format: date-time
+      allOf:
+        - $ref: "#/components/schemas/AthleteSummary"
+        - type: object
+          properties:
+            gear:
+              type: array
+              items:
+                $ref: '#/components/schemas/Gear'
+              description: List of gear.
+            height:
+              type: integer
+              description: Height in cm.
+              example: 180
+            weight:
+              type: integer
+              description: Weight in kg.
+              example: 75
+            clubs:
+              type: array
+              items:
+                $ref: '#/components/schemas/ClubSummary'
+              description: Clubs the athlete is in.
+            follower_count:
+              type: integer
+              description: Number of followers.
+              example: 100
+            following_count:
+              type: integer
+              description: Number following.
+              example: 50
+            friend_count:
+              type: integer
+              description: Number of friends.
+              example: 30
 
     AthleteSummary:
       type: object
@@ -1050,15 +1673,54 @@ components:
       properties:
         id:
           type: integer
+          description: Athlete ID.
+          example: 67890
         username:
           type: string
+          description: Username.
+          example: "runnerjoe"
         firstname:
           type: string
+          description: First name.
+          example: "Joe"
         lastname:
           type: string
+          description: Last name.
+          example: "Doe"
         profile_image_url:
           type: string
           format: uri
+          description: Profile image URL.
+          example: "https://example.com/profile.jpg"
+        city:
+          type: string
+          description: City.
+          example: "New York"
+        state:
+          type: string
+          description: State.
+          example: "NY"
+        country:
+          type: string
+          description: Country.
+          example: "USA"
+        sex:
+          type: string
+          enum:
+            - M
+            - F
+          description: Sex.
+          example: "M"
+        created:
+          type: string
+          format: date-time
+          description: Creation date.
+          example: "2024-01-01T00:00:00Z"
+        updated:
+          type: string
+          format: date-time
+          description: Last update date.
+          example: "2025-08-09T00:00:00Z"
 
     Stats:
       type: object
@@ -1070,6 +1732,7 @@ components:
         biggest_run_elevation_gain:
           type: number
           description: Longest run workout elevation gain (meters)
+          example: 500.0
         week_run_totals:
           $ref: '#/components/schemas/StatsTotals'
         ytd_run_totals:
@@ -1120,31 +1783,31 @@ components:
           example: 9328492348
         name:
           type: string
-          example: Cool Shoes
           description: user-set nickname for this gear
+          example: Cool Shoes
         description:
           type: string
-          example: Main running shoes. They cool.
           description: user-set description for this gear
+          example: Main running shoes. They cool.
         brand_name:
           type: string
-          example: Hoka
           description: brand name of this gear
+          example: Hoka
         model_name:
           type: string
-          example: Mach 6
           description: model or make of this gear
+          example: Mach 6
         primary:
           type: boolean
-          example: true
           description: whether this is the "primary" or default gear to be used for all compatible workouts
+          example: true
         type:
           type: string
           enum:
             - shoes
             - bike
-          example: shoes
           description: the machine-readable type of gear (just shoes and bike for now)
+          example: shoes
         mileage:
           type: number
           description: distance completed using this gear (meters)
@@ -1158,16 +1821,16 @@ components:
       properties:
         id:
           type: integer
-          example: 39480243982934
           description: Route ID
+          example: 39480243982934
         name:
           type: string
-          example: Cool House Loop
           description: user-set name for this route
+          example: Cool House Loop
         description:
           type: string
-          example: Quick 4 mile loop around the house
           description: user-set description for this route
+          example: Quick 4 mile loop around the house
         distance:
           type: number
           description: distance of this route in meters
@@ -1191,20 +1854,22 @@ components:
       properties:
         id:
           type: integer
+          description: Map ID.
+          example: 456
         polyline:
           type: string
-          example: ki{eFvqfiVqAWQIGEEKAYJgBVqDJ{BHa@jAkNJw@Pw@V{APs@^aABQAOEQGKoJ_FuJkFqAo@{A}@sH{DiAs@Q]?WVy@`@oBt@_CB]KYMMkB{AQEI@WT{BlE{@zAQPI@ICsCqA_BcAeCmAaFmCqIoEcLeG}KcG}A}@cDaBiDsByAkAuBqBi@y@_@o@o@kB}BgIoA_EUkAMcACa@BeBBq@LaAJe@b@uA`@_AdBcD`@iAPq@RgALqAB{@EqAyAoOCy@AmCBmANqBLqAZkB\\iCPiBJwCCsASiCq@iD]eA]y@[i@w@mAa@i@k@g@kAw@i@Ya@Q]EWFMLa@~BYpAFNpA`Aj@n@X`@V`AHh@JfB@xAMvAGZGHIDIAWOEQNcC@sACYK[MSOMe@QKKKYOs@UYQISCQ?Q@WNo@r@OHGAGCKOQ_BU}@MQGG]Io@@c@FYNg@d@s@d@ODQAMOMaASs@_@a@SESAQDqBn@a@RO?KK?UBU\\kA@Y?WMo@Iy@GWQ_@WSSGg@AkABQB_Ap@_A^o@b@Q@o@IS@OHi@n@OFS?OI}@iAQMQGQC}@DOIIUK{@IUOMyBo@kASOKIQCa@L[|AgATWN[He@?QKw@FOPCh@Fx@l@TDLELKl@aAHIJEX@r@ZTDV@LENQVg@RkA@c@MeA?WFOPMf@Ej@Fj@@LGHKDM?_@_@iC?a@HKRIl@NT?FCHMFW?YEYGWQa@GYBiAIq@Gq@L_BHSHK|@WJETSLQZs@z@_A~@uA^U`@G\\CRB\\Tl@p@Th@JZ^bB`@lAHLXVLDP?LGFSKiDBo@d@wBVi@R]VYVE\\@`@Lh@Fh@CzAk@RSDQA]GYe@eAGWSiBAWBWBIJORK`@KPOPSTg@h@}Ad@o@F[E_@EGMKUGmAEYGMIMYKs@?a@J}@@_BD_@HQJMx@e@LKHKHWAo@UoAAWFmAH}@?w@C[YwAAc@HSNM|Ao@rA}@zAq@`@a@j@eAxAuBXQj@MXSR[b@gAFg@?YISOGaAHi@Xw@v@_@d@WRSFqARUHQJc@d@m@`A[VSFUBcAEU@WFULUPa@v@Y~@UrBc@dBI~@?l@P~ABt@N`HEjA]zAEp@@p@TrBCl@CTQb@k@dAg@jAU^KJYLK@k@A[Js@d@a@b@]RgBl@[FMAw@[]G]?m@D_@F]P[Vu@t@[TMF_@Do@E_@@q@P]PWZUZw@vAkAlAGJOj@IlAMd@OR{@p@a@d@sBpD]v@a@`Aa@n@]TODgBVk@Pe@^cBfBc@Rs@La@RSPm@|@wCpDS^Wp@QZML{@l@qBbCYd@k@lAIVCZBZNTr@`@RRHZANIZQPKDW@e@CaASU?I@YTKRQx@@\\VmALYRQLCL?v@P|@D\\GJEFKDM@OCa@COOYIGm@YMUCM@]JYr@uAx@kAt@}@jAeAPWbAkBj@s@bAiAz@oAj@m@VQlAc@VQ~@aA`Au@p@Q`AIv@MZORUV_@p@iB|AoCh@q@dAaANUNWH[N{AJ[^m@t@_Av@wA\\a@`@W`@In@Al@B^E`@Wl@u@\\[VQ\\K`@Eb@?R@dAZP@d@CRExAs@\\Yt@{@LG\\MjAATINOXo@d@kAl@_AHYBOCe@QiBCm@Fq@\\wADo@AyGEeBWuB@YHu@Tu@Lk@VcCTo@d@aA\\WJE`@G~@FP?VI\\U~@sANO`@SfAMj@U\\WjAsAXS`@UNENALBHFFL?^Ml@Uj@]b@q@RUJSPkChEc@XcAb@sA|@]PaA\\OJKNER?TDTNj@Jn@?p@OfC@ZR`B@VCV_@n@{@l@WbACv@OlABnAPl@LNNHbBBNBLFFJ@^GLg@x@i@|AMP[X}@XOJKPET?l@LhAFXp@fBDRCd@S\\_@Ps@PQ@}A]S?QDe@V]b@MR[fAKt@ErAF~CANILYDKGIKe@{@Yy@e@sB[gA[c@e@YUCU?WBUHUNQPq@`AiArAMV[^e@Zc@JQJKNMz@?r@Bb@PfAAfA@VVbADn@E`@KHSEe@SMAKDKFM\\^dDCh@m@LoAQ_@@MFOZLfBEl@QbASd@KLQBOAaAc@QAQ@QHc@v@ONMJOBOCg@c@]O[EMBKFGL?RHv@ARERGNe@h@{@h@WVGNDt@JLNFPFz@LdBf@f@PJNHPF`ADPJJJDl@I`@B^Tp@bALJNDNALIf@i@PGPCt@DNE`@Uv@[dAw@RITGRCtAARBPJLPJRZxB?VEX_@vAAR?RDNHJJBh@UnBm@h@IRDRJNNJPNbBFRJLLBLCzAmAd@Uf@Gf@?P@PFJNHPFTH`BDTHNJJJ@LG`@m@^YPER@RDPHNNJRLn@HRLN^VNPHTFX@\\UlDFb@FHh@NP@HKPsB?}ASkCQ{@[y@q@}@cA{@KOCQDa@t@{CFGJCf@Nl@ZtA~@r@p@`@h@rAxBd@rA\\fARdAPjANrB?f@AtBCd@QfBkAjJOlBChA?rBFrBNlBdAfKFzAC~@Iz@Mz@Sv@s@jBmAxBi@hAWt@Sv@Qx@O`BA`@?dAPfBVpAd@`BfBlFf@fBdA~Cr@pAz@fApBhBjAt@H?IL?FBFJLx@^lHvDvh@~XnElCbAd@pGhDbAb@nAr@`Ad@`GhDnBbAxCbBrWhNJJDPARGP_@t@Qh@]pAUtAoA`Ny@jJApBBNFLJFJBv@Hb@HBF?\\
           description: The polyline representation of the map
+          example: ki{eFvqfiVqAWQIGEEKAYJgBVqDJ{BHa@jAkNJw@Pw@V{APs@^aABQAOEQGKoJ_FuJkFqAo@{A}@sH{DiAs@Q]?WVy@`@oBt@_CB]KYMMkB{AQEI@WT{BlE{@zAQPI@ICsCqA_BcAeCmAaFmCqIoEcLeG}KcG}A}@cDaBiDsByAkAuBqBi@y@_@o@o@kB}BgIoA_EUkAMcACa@BeBBq@LaAJe@b@uA`@_AdBcD`@iAPq@RgALqAB{@EqAyAoOCy@AmCBmANqBLqAZkB\\iCPiBJwCCsASiCq@iD]eA]y@[i@w@mAa@i@k@g@kAw@i@Ya@Q]EWFMLa@~BYpAFNpA`Aj@n@X`@V`AHh@JfB@xAMvAGZGHIDIAWOEQNcC@sACYK[MSOMe@QKKKYOs@UYQISCQ?Q@WNo@r@OHGAGCKOQ_BU}@MQGG]Io@@c@FYNg@d@s@d@ODQAMOMaASs@_@a@SESAQDqBn@a@RO?KK?UBU\\kA@Y?WMo@Iy@GWQ_@WSSGg@AkABQB_Ap@_A^o@b@Q@o@IS@OHi@n@OFS?OI}@iAQMQGQC}@DOIIUK{@IUOMyBo@kASOKIQCa@L[|AgATWN[He@?QKw@FOPCh@Fx@l@TDLELKl@aAHIJEX@r@ZTDV@LENQVg@RkA@c@MeA?WFOPMf@Ej@Fj@@LGHKDM?_@_@iC?a@HKRIl@NT?FCHMFW?YEYGWQa@GYBiAIq@Gq@L_BHSHK|@WJETSLQZs@z@_A~@uA^U`@G\\CRB\\Tl@p@Th@JZ^bB`@lAHLXVLDP?LGFSKiDBo@d@wBVi@R]VYVE\\@`@Lh@Fh@CzAk@RSDQA]GYe@eAGWSiBAWBWBIJORK`@KPOPSTg@h@}Ad@o@F[E_@EGMKUGmAEYGMIMYKs@?a@J}@@_BD_@HQJMx@e@LKHKHWAo@UoAAWFmAH}@?w@C[YwAAc@HSNM|Ao@rA}@zAq@`@a@j@eAxAuBXQj@MXSR[b@gAFg@?YISOGaAHi@Xw@v@_@d@WRSFqARUHQJc@d@m@`A[VSFUBcAEU@WFULUPa@v@Y~@UrBc@dBI~@?l@P~ABt@N`HEjA]zAEp@@p@TrBCl@CTQb@k@dAg@jAU^KJYLK@k@A[Js@d@a@b@]RgBl@[FMAw@[]G]?m@D_@F]P[Vu@t@[TMF_@Do@E_@@q@P]PWZUZw@vAkAlAGJOj@IlAMd@OR{@p@a@d@sBpD]v@a@`Aa@n@]TODgBVk@Pe@^cBfBc@Rs@La@RSPm@|@wCpDS^Wp@QZML{@l@qBbCYd@k@lAIVCZBZNTr@`@RRHZANIZQPKDW@e@CaASU?I@YTKRQx@@\\VmALYRQLCL?v@P|@D\\GJEFKDM@OCa@COOYIGm@YMUCM@]JYr@uAx@kAt@}@jAeAPWbAkBj@s@bAiAz@oAj@m@VQlAc@VQ~@aA`Au@p@Q`AIv@MZORUV_@p@iB|AoCh@q@dAaANUNWH[N{AJ[^m@t@_Av@wA\\a@`@W`@In@Al@B^E`@Wl@u@\\[VQ\\K`@Eb@?R@dAZP@d@CRExAs@\\Yt@{@LG\\MjAATINOXo@d@kAl@_AHYBOCe@QiBCm@Fq@\\wADo@AyGEeBWuB@YHu@Tu@Lk@VcCTo@d@aA\\WJE`@G~@FP?VI\\U~@sANO`@SfAMj@U\\WjAsAXS`@UNENALBHFFL?^Ml@Uj@]b@q@RUJSPkChEc@XcAb@sA|@]PaA\\OJKNER?TDTNj@Jn@?p@OfC@ZR`B@VCV_@n@{@l@WbACv@OlABnAPl@LNNHbBBNBLFFJ@^GLg@x@i@|AMP[X}@XOJKPET?l@LhAFXp@fBDRCd@S\\_@Ps@PQ@}A]S?QDe@V]b@MR[fAKt@ErAF~CANILYDKGIKe@{@Yy@e@sB[gA[c@e@YUCU?WBUHUNQPq@`AiArAMV[^e@Zc@JQJKNMz@?r@Bb@PfAAfA@VVbADn@E`@KHSEe@SMAKDKFM\\^dDCh@m@LoAQ_@@MFOZLfBEl@QbASd@KLQBOAaAc@QAQ@QHc@v@ONMJOBOCg@c@]O[EMBKFGL?RHv@ARERGNe@h@{@h@WVGNDt@JLNFPFz@LdBf@f@PJNHPF`ADPJJJDl@I`@B^Tp@bALJNDNALIf@i@PGPCt@DNE`@Uv@[dAw@RITGRCtAARBPJLPJRZxB?VEX_@vAAR?RDNHJJBh@UnBm@h@IRDRJNNJPNbBFRJLLBLCzAmAd@Uf@Gf@?P@PFJNHPFTH`BDTHNJJJ@LG`@m@^YPER@RDPHNNJRLn@HRLN^VNPHTFX@\\UlDFb@FHh@NP@HKPsB?}ASkCQ{@[y@q@}@cA{@KOCQDa@t@{CFGJCf@Nl@ZtA~@r@p@`@h@rAxBd@rA\\fARdAPjANrB?f@AtBCd@QfBkAjJOlBChA?rBFrBNlBdAfKFzAC~@Iz@Mz@Sv@s@jBmAxBi@hAWt@Sv@Qx@O`BA`@?dAPfBVpAd@`BfBlFf@fBdA~Cr@pAz@fApBhBjAt@H?IL?FBFJLx@^lHvDvh@~XnElCbAd@pGhDbAb@nAr@`Ad@`GhDnBbAxCbBrWhNJJDPARGP_@t@Qh@]pAUtAoA`Ny@jJApBBNFLJFJBv@Hb@HBF?\\
         summary_polyline:
           type: string
-          example: ki{eFvqfiVsBmA`Feh@qg@iX`B}JeCcCqGjIq~@kf@cM{KeHeX`@_GdGkSeBiXtB}YuEkPwFyDeAzAe@pC~DfGc@bIOsGmCcEiD~@oBuEkFhBcBmDiEfAVuDiAuD}NnDaNiIlCyDD_CtJKv@wGhD]YyEzBo@g@uKxGmHpCGtEtI~AuLrHkAcAaIvEgH_EaDR_FpBuBg@sNxHqEtHgLoTpIiCzKNr[sB|Es\\`JyObYeMbGsMnPsAfDxAnD}DBu@bCx@{BbEEyAoD`AmChNoQzMoGhOwX|[yIzBeFKg[zAkIdU_LiHxK}HzEh@vM_BtBg@xGzDbCcF~GhArHaIfByAhLsDiJuC?_HbHd@nL_Cz@ZnEkDDy@hHwJLiCbIrNrIvN_EfAjDWlEnEiAfBxDlFkBfBtEfDaAzBvDKdFx@|@XgJmDsHhAgD`GfElEzOwBnYdBxXgGlSc@bGdHpW|HdJztBnhAgFxc@HnCvBdA
           description: A downsampled version of polyline
+          example: ki{eFvqfiVsBmA`Feh@qg@iX`B}JeCcCqGjIq~@kf@cM{KeHeX`@_GdGkSeBiXtB}YuEkPwFyDeAzAe@pC~DfGc@bIOsGmCcEiD~@oBuEkFhBcBmDiEfAVuDiAuD}NnDaNiIlCyDD_CtJKv@wGhD]YyEzBo@g@uKxGmHpCGtEtI~AuLrHkAcAaIvEgH_EaDR_FpBuBg@sNxHqEtHgLoTpIiCzKNr[sB|Es\\`JyObYeMbGsMnPsAfDxAnD}DBu@bCx@{BbEEyAoD`AmChNoQzMoGhOwX|[yIzBeFKg[zAkIdU_LiHxK}HzEh@vM_BtBg@xGzDbCcF~GhArHaIfByAhLsDiJuC?_HbHd@nL_Cz@ZnEkDDy@hHwJLiCbIrNrIvN_EfAjDWlEnEiAfBxDlFkBfBtEfDaAzBvDKdFx@|@XgJmDsHhAgD`GfElEzOwBnYdBxXgGlSc@bGdHpW|HdJztBnhAgFxc@HnCvBdA
 
     StreamSet:
       type: object
-      properties:
-        streams:
-          $ref: '#/components/schemas/Stream'
+      additionalProperties:
+        $ref: '#/components/schemas/Stream'
+      description: Set of streams keyed by type.
 
     Stream:
       type: object
@@ -1219,22 +1884,24 @@ components:
               - type: array
                 items:
                   type: number
-          example: [904.5, 957.8, 963.1, 989.1, 1011.9, 1049.7, 1082.4, 1098.1, 1113.2, 1124.7, 1139.2, 1142.1, 1170.4, 1173]
           description: the data in the stream
+          example: [904.5, 957.8, 963.1, 989.1, 1011.9, 1049.7, 1082.4, 1098.1, 1113.2, 1124.7, 1139.2, 1142.1, 1170.4, 1173]
         series_type:
           type: string
+          description: Type of series.
+          example: "time"
         original_size:
           type: integer
-          example: 14
           description: the number of data points in this stream
+          example: 14
         resolution:
           type: string
           enum:
             - low
             - medium
             - high
-          example: medium
           description: the resolution of the data (time between data points)
+          example: medium
 
     Zones:
       type: object
@@ -1247,10 +1914,13 @@ components:
           enum:
             - heartrate
             - power
+          description: Type of zones.
+          example: "heartrate"
         zones:
           type: array
           items:
             $ref: '#/components/schemas/ZoneRange'
+          description: List of zone ranges.
 
     ZoneRange:
       type: object
@@ -1260,15 +1930,20 @@ components:
       properties:
         min:
           type: integer
+          description: Minimum value of the zone.
+          example: 100
         max:
           type: integer
+          description: Maximum value of the zone.
+          example: 120
         name:
           type: string
+          description: Name of the zone.
+          example: "Zone 1"
 
     ActivityZone:
       type: object
-      description: Zone data for a specific metric (e.g., heart rate or power) during an activity.
-        Basically the amount of time spent in each zone.
+      description: Zone data for a specific metric (e.g., heart rate or power) during an activity. Basically the amount of time spent in each zone.
       properties:
         type:
           type: string
@@ -1302,24 +1977,24 @@ components:
 
     Fault:
       type: object
-      description: General error message containing HTTP code and a human-readable message about what failed,
-        as well as optional additional detail courtesy of ErrorDetail.
+      description: General error message containing HTTP code and a human-readable message about what failed, as well as optional additional detail courtesy of ErrorDetail.
       required:
         - code
         - message
       properties:
         code:
           type: integer
-          example: 400
           description: HTTP code returned by the request (for redundancy)
+          example: 400
         message:
           type: string
-          example: Invalid input provided
           description: A description of what caused the request to fail
+          example: Invalid input provided
         errors:
           type: array
           items:
             $ref: '#/components/schemas/ErrorDetail'
+          description: List of error details.
 
     ErrorDetail:
       type: object
@@ -1327,25 +2002,24 @@ components:
       properties:
         resource:
           type: string
-          example: Athlete
           description: Which part of the request (or part of the underlying server architecture) caused this error
+          example: Athlete
         field:
           type: string
-          example: email
           description: The field (or subsection of a component) that caused the error
+          example: email
         code:
           type: string
-          example: invalid
           description: A machine and human readable code describing what happened
+          example: invalid
         description:
           type: string
-          example: Athlete email did not match regex
           description: A human-readable error
+          example: Athlete email did not match regex
 
     ActivityType:
       type: string
-      description: The type of activity. This will affect algorithms, the impact of the workout, metrics saved for the workout.
-        Note that the type is usually auto-determined from the workout file.
+      description: The type of activity. This will affect algorithms, the impact of the workout, metrics saved for the workout. Note that the type is usually auto-determined from the workout file.
       enum:
         - run
         - ride
@@ -1356,6 +2030,7 @@ components:
         - virtual_run
         - virtual_ride
       example: run
+
     StreamType:
       type: string
       description: A selector for the type of data this Stream is.
@@ -1388,8 +2063,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AthleteSummary'
-          example: []
           description: If visibility is whitelist, the only logged in accounts that can view something with this visibility
+          example: []
           default: []
       description: |
         Visibility has two components: visibility (required) and whitelist (optional). There are 4 modes to visibility.
@@ -1397,7 +2072,6 @@ components:
         me: only the owner of this can view this
         everyone: everyone (and logged out users) can view this
         whitelist: every AthleteSummary in the 'whitelist' parameter can view this resource
-        
 
     ActivityTag:
       type: string
@@ -1416,7 +2090,6 @@ components:
         - virtual
         - workout
       example: training
-    
 
     ClubSummary:
       type: object
@@ -1424,63 +2097,147 @@ components:
         id:
           type: integer
           description: The club's unique identifier.
+          example: 445566
         name:
           type: string
           description: The club's name.
+          example: "Local Runners"
         profile_medium:
           type: string
           format: uri
           description: URL to a 60x60 pixel profile picture.
+          example: "https://example.com/clubprofile.jpg"
         cover_photo:
           type: string
           format: uri
           description: URL to a cover photo.
+          example: "https://example.com/clubcover.jpg"
         activities:
           type: array
-          description: The activity types that count for a club. Takes precedence over sport_type.
+          description: The activity types that count for a club.
           items:
             $ref: '#/components/schemas/ActivityType'
+          example: ["run"]
         city:
           type: string
           description: The club's city.
+          example: Raleigh
         state:
           type: string
           description: The club's state or geographical region.
+          example: North Carolina
         country:
           type: string
           description: The club's country.
+          example: United States
         private:
           type: boolean
-          description: Whether the club is private.
+          description: Whether the club is private (invite only).
+          example: false
         member_count:
           type: integer
           description: The club's member count.
+          example: 50
         verified:
           type: boolean
           description: Whether the club is verified or not.
+          example: true
         url:
           type: string
           description: The club's vanity URL.
+          example: "localrunners"
 
-    ClubDetail:
+    Club:
       allOf:
         - $ref: '#/components/schemas/ClubSummary'
         - type: object
           properties:
-            membership:
-              type: string
-              enum: [ member, pending ]
-              description: The membership status of the logged-in athlete.
             admin:
               type: boolean
               description: Whether the currently logged-in athlete is an administrator of this club.
+              example: false
             owner:
               type: boolean
               description: Whether the currently logged-in athlete is the owner of this club.
-            following_count:
-              type: integer
-              description: The number of athletes in the club that the logged-in athlete follows.
+              example: false
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/ClubAthlete'
+              description: List of members.
+            tags:
+              type: array
+              items:
+                type: string
+              description: Tags for the club.
+              example: ["running", "community"]
 
+    ClubAthlete:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Athlete ID in club.
+          example: 67890
+        firstname:
+          type: string
+          description: First name.
+          example: "Jane"
+        lastname:
+          type: string
+          description: Last name.
+          example: "Smith"
+        profile_image_url:
+          type: string
+          format: uri
+          description: Profile image.
+          example: "https://example.com/jane.jpg"
+        admin:
+          type: boolean
+          description: Is admin.
+          example: true
+        owner:
+          type: boolean
+          description: Is owner.
+          example: false
+
+    ClubPost:
+      type: object
+      required:
+        - id
+        - text
+        - created_at
+        - athlete
+      properties:
+        id:
+          type: integer
+          description: Post ID.
+          example: 789
+        text:
+          type: string
+          description: Post text.
+          example: "Event announcement"
+        created_at:
+          type: string
+          format: date-time
+          description: Creation time.
+          example: "2025-08-09T12:00:00Z"
+        athlete:
+          $ref: '#/components/schemas/AthleteSummary'
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        athlete:
+          $ref: '#/components/schemas/AthleteSummary'
+        value:
+          type: number
+          description: Value for the metric.
+          example: 10000.0
+        rank:
+          type: integer
+          description: Rank in leaderboard.
+          example: 1
 
 security: []
 tags:
@@ -1494,3 +2251,5 @@ tags:
     description: Route creation and export
   - name: streams
     description: Activity and route streams
+  - name: clubs
+    description: Club management and interactions
