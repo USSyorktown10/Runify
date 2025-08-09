@@ -883,7 +883,7 @@ components:
         visibility:
           $ref: '#/components/schemas/Visibility'
         invisible:
-          type: bool
+          type: boolean
           default: false
           description: |
             If true, don't use this activity in relative effort or other calculations.
