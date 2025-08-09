@@ -44,4 +44,5 @@ If you're interested in contributing in any way, feel free to reach out to us at
 Current Contributers:
 
 **[USSyorktown10](https://github.com/USSyorktown10)** (Creator and Owner)
-**[QuantumBagel](https://github.com/quantumbagel)** (Co-owner and Senior Developer)
+
+**[Julian Reder aka. QuantumBagel](https://github.com/quantumbagel)** (Co-owner and Senior Developer)
