@@ -590,7 +590,7 @@ components:
           type: array
           items:
             type: string
-            example: "heart_rate"
+            example: "heartrate"
         tags:
           type: array
           items:
@@ -1170,11 +1170,12 @@ components:
     ActivityZone:
       type: object
       description: Zone data for a specific metric (e.g., heart rate or power) during an activity.
+        Basically the amount of time spent in each zone.
       properties:
         type:
           type: string
           enum:
-            - heart_rate
+            - heartrate
             - power
           description: The type of zone data.
           example: power
@@ -1206,6 +1207,8 @@ components:
 
     Fault:
       type: object
+      description: General error message containing HTTP code and a human-readable message about what failed,
+        as well as optional additional detail courtesy of ErrorDetail.
       required:
         - code
         - message
@@ -1225,6 +1228,7 @@ components:
 
     ErrorDetail:
       type: object
+      description: Extra detail about specific arguments or components that failed to cause this error
       properties:
         resource:
           type: string
@@ -1243,12 +1247,10 @@ components:
           example: Athlete email did not match regex
           description: A human-readable error
 
-    ####################################################
-    # ENUM-LIKE PRIMITIVE REFS
-    ####################################################
     ActivityType:
       type: string
-      description: Primary activity type
+      description: The type of activity. This will affect algorithms, the impact of the workout, metrics saved for the workout.
+        Note that the type is usually auto-determined from the workout file.
       enum:
         - run
         - ride
@@ -1261,7 +1263,7 @@ components:
       example: run
     StreamType:
       type: string
-      description: Type of data stream to retrieve.
+      description: A selector for the type of data this Stream is.
       enum:
         - time
         - distance
@@ -1269,24 +1271,45 @@ components:
         - altitude
         - heartrate
         - cadence
-        - watts
-        - temp
+        - power
+        - temperature
       example: distance
 
     Visibility:
-      type: string
-      enum:
-        - followers
-        - me
-        - everyone
-      description: Visibility level for an activity
-      example: everyone
+      type: object
+      properties:
+        visibility:
+          type: string
+          enum:
+            - followers
+            - me
+            - everyone
+            - whitelist
+          description: Visibility level for an activity
+          example: everyone
+          default: everyone
+        whitelist:
+          type: array
+          items:
+            $ref: '#/components/schemas/AthleteSummary'
+          example: []
+          description: If visibility is whitelist, the only logged in accounts that can view something with this visibility
+          default: []
+      description: |
+        Visibility has two components: visibility (required) and whitelist (optional). There are 4 modes to visibility.
+        followers: only followers of this user can view this
+        me: only the owner of this can view this
+        everyone: everyone (and logged out users) can view this
+        whitelist: every AthleteSummary in the 'whitelist' parameter can view this resource
+        
 
     ActivityTag:
       type: string
       description: |
         Tags that can be applied to an activity for categorization or filtering.
-        Multiple tags can be combined to describe an activity.
+        Multiple tags can be combined to describe an activity. 
+        These tags can be about how the workout was performed (whether it was on a trainer), 
+        the type of workout (long run, training, race), or even if the run was alone.
       enum:
         - race
         - training
@@ -1295,7 +1318,6 @@ components:
         - long_run
         - recovery
         - virtual
-        - group
         - workout
       example: training
 
