@@ -1,0 +1,1496 @@
+openapi: 3.1.0
+info:
+  title: Runify API
+  description: API for managing athlete activities, routes, gear, and athlete profiles.
+  version: 1.0.0
+  contact:
+    name: Julian Reder
+    url: https://quantumbagel.github.io
+
+servers:
+  - url: https://localhost:8000/api/
+    description: Production server
+
+
+paths:
+  /activities:
+    post:
+      summary: Create an activity
+      description: Creates a manual activity or uploads an activity file for the authenticated athlete.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateActivityRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateActivityFileRequest'
+      responses:
+        "201":
+          description: Created — returns the Activity object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
+
+  /activities/{id}:
+    get:
+      summary: Get activity
+      description: Returns details for an activity owned by the authenticated athlete.
+      parameters:
+        - $ref: '#/components/parameters/ActivityId'
+      responses:
+        "200":
+          description: OK — Activity object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
+    put:
+      summary: Update activity
+      description: Update an activity owned by the authenticated athlete.
+      parameters:
+        - $ref: '#/components/parameters/ActivityId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateActivityRequest'
+      responses:
+        "200":
+          description: OK — Updated Activity object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
+    delete:
+      summary: Delete Activity
+      description: Deletes an activity owned by the authenticated athlete.
+      operationId: deleteActivity
+      parameters:
+        - $ref: '#/components/parameters/ActivityId'
+      responses:
+        '204':
+          description: Activity successfully deleted. No content returned.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
+
+  /activities/{id}/laps:
+    get:
+      summary: List activity laps
+      parameters:
+        - $ref: '#/components/parameters/ActivityId'
+      responses:
+        "200":
+          description: OK — array of Lap objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Lap'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
+
+  /activities/{id}/zones:
+    get:
+      summary: Get Activity Zones
+      description: Returns heart rate and/or power zones for a specific activity, including time spent in each zone.
+      operationId: getActivityZones
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The activity identifier.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Array of zone information for the activity.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityZone'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
+
+
+
+  /athlete/activities:
+    get:
+      summary: List athlete activities
+      description: Returns activities for the authenticated athlete.
+      parameters:
+        - name: before
+          in: query
+          schema:
+            type: integer
+            description: Epoch timestamp (seconds) — return activities before this time.
+        - name: after
+          in: query
+          schema:
+            type: integer
+            description: Epoch timestamp (seconds) — return activities after this time.
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+            minimum: 1
+      responses:
+        "200":
+          description: OK — array of SummaryActivity objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SummaryActivity'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
+        - athletes
+
+  ####################################################
+  # ATHLETES
+  ####################################################
+  /athlete:
+    get:
+      summary: Get authenticated athlete
+      responses:
+        "200":
+          description: OK — Athlete object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Athlete'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+    put:
+      summary: Update authenticated athlete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAthleteRequest'
+      responses:
+        "200":
+          description: OK — updated Athlete object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Athlete'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+
+  /athlete/zones:
+    get:
+      summary: Get athlete zones
+      description: Returns heart rate and/or power zones for the authenticated athlete.
+      responses:
+        "200":
+          description: OK — array of Zones objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Zones'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+
+  /athletes/{id}/stats:
+    get:
+      summary: Get athlete stats
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+      responses:
+        "200":
+          description: OK — Stats object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+
+
+  /athletes/{id}/follow:
+    post:
+      summary: Follow an athlete
+      description: Start following the specified athlete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Athlete followed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AthleteSummary'
+    delete:
+      summary: Unfollow an athlete
+      description: Stop following the specified athlete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Athlete unfollowed successfully.
+
+  /athletes/{id}/followers:
+    get:
+      summary: Get followers of an athlete
+      description: Returns a list of athletes who follow the specified athlete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of followers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteSummary'
+
+  /athletes/{id}/following:
+    get:
+      summary: Get athletes an athlete is following
+      description: Returns a list of athletes the specified athlete is following.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of followed athletes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteSummary'
+
+  /athletes/{id}/friends:
+    get:
+      summary: Get mutual friends of an athlete
+      description: Returns a list of athletes who follow and are followed by the specified athlete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of mutual friends.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteSummary'
+
+
+  ####################################################
+  # GEAR
+  ####################################################
+  /gear:
+    post:
+      summary: Add equipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGearRequest'
+      responses:
+        "200":
+          description: OK — Gear object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gear'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - gear
+
+  /gear/{id}:
+    get:
+      summary: Get equipment
+      parameters:
+        - $ref: '#/components/parameters/GearId'
+      responses:
+        "200":
+          description: OK — Gear object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gear'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - gear
+    put:
+      summary: Update equipment
+      parameters:
+        - $ref: '#/components/parameters/GearId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGearRequest'
+      responses:
+        "200":
+          description: OK — updated Gear object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gear'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - gear
+    delete:
+      summary: Remove equipment
+      parameters:
+        - $ref: '#/components/parameters/GearId'
+      responses:
+        "200":
+          description: Deleted — no content. :)
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - gear
+
+  ####################################################
+  # ROUTES
+  ####################################################
+  /routes:
+    post:
+      summary: Create route
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateRouteRequest'
+      responses:
+        "200":
+          description: OK — Route object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+
+  /routes/{id}:
+    get:
+      summary: Get route
+      parameters:
+        - $ref: '#/components/parameters/RouteId'
+      responses:
+        "200":
+          description: OK — Route object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+    delete:
+      summary: Delete Route
+      description: Deletes a route owned by the authenticated athlete.
+      operationId: deleteRoute
+      parameters:
+        - $ref: '#/components/parameters/RouteId'
+      responses:
+        '204':
+          description: Route successfully deleted. No content returned.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+    put:
+      summary: Update Route
+      description: Updates a route owned by the authenticated athlete.
+      operationId: updateRoute
+      parameters:
+        - $ref: '#/components/parameters/RouteId'
+      requestBody:
+        description: Route fields to update.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRouteRequest'
+      responses:
+        '200':
+          description: Updated Route object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+
+  /routes/{id}/export/gpx:
+    get:
+      summary: Export route GPX
+      parameters:
+        - $ref: '#/components/parameters/RouteId'
+      responses:
+        "200":
+          description: GPX file (binary)
+          content:
+            application/gpx+xml:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+
+  /routes/{id}/export/tcx:
+    get:
+      summary: Export route TCX
+      parameters:
+        - $ref: '#/components/parameters/RouteId'
+      responses:
+        "200":
+          description: TCX file (binary)
+          content:
+            application/vnd.garmin.tcx+xml:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+
+  /athletes/{id}/routes:
+    get:
+      summary: List athlete routes
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 30
+            maximum: 50
+            minimum: 1
+      responses:
+        "200":
+          description: OK — array of Route objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Route'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+        - athletes
+
+  ####################################################
+  # STREAMS
+  ####################################################
+  /activities/{id}/streams:
+    get:
+      summary: Get activity streams
+      description: Returns streams (time, distance, position, heartrate, etc.) for a given activity.
+      parameters:
+        - $ref: '#/components/parameters/ActivityId'
+        - name: keys
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/StreamType'
+            description: Array of StreamTypes
+          style: form
+        - name: key_by_type
+          in: query
+          required: true
+          schema:
+            type: boolean
+            description: Must be true.
+      responses:
+        "200":
+          description: OK — StreamSet object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamSet'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - streams
+        - activities
+
+  /routes/{id}/streams:
+    get:
+      summary: Get route streams
+      parameters:
+        - $ref: '#/components/parameters/RouteId'
+      responses:
+        "200":
+          description: OK — StreamSet object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamSet'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - streams
+        - routes
+
+components:
+  parameters:
+    ActivityId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Activity identifier
+    AthleteId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Athlete identifier
+    GearId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Gear identifier
+    RouteId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Route identifier
+
+  responses:
+    FaultResponse:
+      description: Error response (4xx/5xx).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Fault'
+
+  schemas:
+    ####################################################
+    # REQUEST BODIES
+    ####################################################
+    CreateActivityRequest:
+      type: object
+      required:
+        - name
+        - start_time
+        - elapsed_time
+      properties:
+        name:
+          type: string
+          example: "Morning Run"
+        type:
+          $ref: '#/components/schemas/ActivityType'
+        visibility:
+          $ref: '#/components/schemas/Visibility'
+          default: everyone
+        description:
+          type: string
+        hidden_stats:
+          type: array
+          items:
+            type: string
+            example: "heartrate"
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityTag'
+        gear_id:
+          type: string
+        start_time:
+          type: string
+          format: date-time
+          example: "2025-08-08T07:00:00Z"
+        elapsed_time:
+          type: integer
+          description: Duration in seconds
+          example: 3600
+        distance:
+          type: number
+          description: Meters
+          example: 10000.0
+        elevation_gained:
+          type: number
+          example: 150.5
+
+    CreateActivityFileRequest:
+      type: object
+      required:
+        - name
+        - file
+        - file_type
+      properties:
+        name:
+          type: string
+          example: "Trail Run"
+        type:
+          $ref: '#/components/schemas/ActivityType'
+        visibility:
+          $ref: '#/components/schemas/Visibility'
+          default: everyone
+        description:
+          type: string
+        hidden_stats:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityTag'
+        gear_id:
+          type: string
+        file:
+          type: string
+          format: binary
+          description: Binary file upload (TCX/GPX/FIT)
+        file_type:
+          type: string
+          enum:
+            - tcx
+            - gpx
+            - fit
+
+    UpdateActivityRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/ActivityType'
+        visibility:
+          $ref: '#/components/schemas/Visibility'
+        description:
+          type: string
+        gear_id:
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityTag'
+        distance:
+          type: number
+        elapsed_time:
+          type: integer
+        elevation_gained:
+          type: number
+
+    CreateGearRequest:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          example: "Cool Shoes"
+        description:
+          type: string
+        brand_name:
+          type: string
+        model_name:
+          type: string
+        primary:
+          type: boolean
+          default: false
+        type:
+          type: string
+          enum:
+            - shoes
+            - bike
+        mileage:
+          type: number
+          description: Starting mileage in meters
+          example: 0
+
+    UpdateGearRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        brand_name:
+          type: string
+        model_name:
+          type: string
+        primary:
+          type: boolean
+        type:
+          type: string
+          enum:
+            - shoes
+            - bike
+        mileage:
+          type: number
+
+    CreateRouteRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        file:
+          type: string
+          format: binary
+          description: GPX or TCX file (multipart upload)
+        file_type:
+          type: string
+          enum:
+            - gpx
+            - tcx
+
+    UpdateRouteRequest:
+      type: object
+      description: Fields for updating a route.
+      properties:
+        name:
+          type: string
+          description: The name of the route.
+        description:
+          type: string
+          description: Description of the route.
+
+    UpdateAthleteRequest:
+      type: object
+      properties:
+        weight:
+          type: number
+          description: kilograms
+        display_name:
+          type: string
+        bio:
+          type: string
+        location:
+          type: string
+        default_sport:
+          $ref: '#/components/schemas/ActivityType'
+
+    ####################################################
+    # CORE MODELS
+    ####################################################
+    Activity:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - start_time
+        - elapsed_time
+      properties:
+        id:
+          type: integer
+          example: 12345
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/ActivityType'
+        visibility:
+          $ref: '#/components/schemas/Visibility'
+        invisible:
+          type: boolean
+          default: false
+          description: |
+            If true, don't use this activity in relative effort or other calculations.
+            Visibility still governs who can see this activity though
+        description:
+          type: string
+        distance:
+          type: number
+          description: meters
+        elapsed_time:
+          type: integer
+          description: seconds
+        moving_time:
+          type: integer
+          description: seconds
+        start_time:
+          type: string
+          format: date-time
+        elevation_gained:
+          type: number
+          description: meters
+        average_speed:
+          type: number
+          description: meters/second
+        max_speed:
+          type: number
+          description: meters/second
+        gear_id:
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityTag'
+        hidden_stats:
+          type: array
+          items:
+            type: string
+        laps:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lap'
+        athlete:
+          $ref: '#/components/schemas/AthleteSummary'
+        map:
+          $ref: '#/components/schemas/Map'
+
+    SummaryActivity:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - start_time
+        - elapsed_time
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/ActivityType'
+        distance:
+          type: number
+        elapsed_time:
+          type: integer
+        start_time:
+          type: string
+          format: date-time
+        visibility:
+          $ref: '#/components/schemas/Visibility'
+
+    Comment:
+      type: object
+      required:
+        - id
+        - activity_id
+        - athlete
+        - text
+        - created_at
+      properties:
+        id:
+          type: integer
+        activity_id:
+          type: integer
+        athlete:
+          $ref: '#/components/schemas/AthleteSummary'
+        text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Lap:
+      type: object
+      required:
+        - lap_index
+        - distance
+        - elapsed_time
+        - start_time
+      properties:
+        lap_index:
+          type: integer
+        distance:
+          type: number
+          description: meters
+        elapsed_time:
+          type: integer
+          description: seconds
+        moving_time:
+          type: integer
+        average_speed:
+          type: number
+        max_speed:
+          type: number
+        start_time:
+          type: string
+          format: date-time
+
+    Athlete:
+      type: object
+      required:
+        - id
+        - firstname
+        - lastname
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        firstname:
+          type: string
+        lastname:
+          type: string
+        profile_image_url:
+          type: string
+          format: uri
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+        weight:
+          type: number
+          description: kilograms
+        bikes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Gear'
+        shoes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Gear'
+        created_at:
+          type: string
+          format: date-time
+
+    AthleteSummary:
+      type: object
+      required:
+        - id
+        - firstname
+        - lastname
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        firstname:
+          type: string
+        lastname:
+          type: string
+        profile_image_url:
+          type: string
+          format: uri
+
+    Stats:
+      type: object
+      properties:
+        longest_run_distance:
+          type: number
+          description: Longest run workout distance (meters)
+          example: 23942.39
+        biggest_run_elevation_gain:
+          type: number
+          description: Longest run workout elevation gain (meters)
+        week_run_totals:
+          $ref: '#/components/schemas/StatsTotals'
+        ytd_run_totals:
+          $ref: '#/components/schemas/StatsTotals'
+        all_run_totals:
+          $ref: '#/components/schemas/StatsTotals'
+
+    StatsTotals:
+      type: object
+      required:
+        - count
+        - distance
+        - moving_time
+        - elapsed_time
+        - elevation_gain
+      properties:
+        count:
+          type: integer
+          description: number of workouts of this type for whatever time frame
+          example: 57
+        distance:
+          type: number
+          description: total distance covered over those workouts (meters)
+          example: 324938.38
+        moving_time:
+          type: integer
+          description: number of seconds you are moving during those workouts
+          example: 209328
+        elapsed_time:
+          type: integer
+          description: number of elapsed seconds (total workout running time)
+          example: 4000098
+        elevation_gain:
+          type: number
+          description: total elevation gain for those workouts (meters)
+          example: 20942.39
+
+    Gear:
+      type: object
+      required:
+        - id
+        - name
+        - type
+      properties:
+        id:
+          type: string
+          description: Gear ID
+          example: 9328492348
+        name:
+          type: string
+          example: Cool Shoes
+          description: user-set nickname for this gear
+        description:
+          type: string
+          example: Main running shoes. They cool.
+          description: user-set description for this gear
+        brand_name:
+          type: string
+          example: Hoka
+          description: brand name of this gear
+        model_name:
+          type: string
+          example: Mach 6
+          description: model or make of this gear
+        primary:
+          type: boolean
+          example: true
+          description: whether this is the "primary" or default gear to be used for all compatible workouts
+        type:
+          type: string
+          enum:
+            - shoes
+            - bike
+          example: shoes
+          description: the machine-readable type of gear (just shoes and bike for now)
+        mileage:
+          type: number
+          description: distance completed using this gear (meters)
+          example: 2644083.6
+
+    Route:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          example: 39480243982934
+          description: Route ID
+        name:
+          type: string
+          example: Cool House Loop
+          description: user-set name for this route
+        description:
+          type: string
+          example: Quick 4 mile loop around the house
+          description: user-set description for this route
+        distance:
+          type: number
+          description: distance of this route in meters
+          example: 1924.23
+        elevation_gain:
+          type: number
+          description: elevation gain for this route in meters
+          example: 123
+        map:
+          $ref: '#/components/schemas/Map'
+        athlete:
+          $ref: '#/components/schemas/AthleteSummary'
+        created_at:
+          type: string
+          format: date-time
+          description: when the Route was created
+          example: 2025-08-08T15:20:23Z
+
+    Map:
+      type: object
+      properties:
+        id:
+          type: integer
+        polyline:
+          type: string
+          example: ki{eFvqfiVqAWQIGEEKAYJgBVqDJ{BHa@jAkNJw@Pw@V{APs@^aABQAOEQGKoJ_FuJkFqAo@{A}@sH{DiAs@Q]?WVy@`@oBt@_CB]KYMMkB{AQEI@WT{BlE{@zAQPI@ICsCqA_BcAeCmAaFmCqIoEcLeG}KcG}A}@cDaBiDsByAkAuBqBi@y@_@o@o@kB}BgIoA_EUkAMcACa@BeBBq@LaAJe@b@uA`@_AdBcD`@iAPq@RgALqAB{@EqAyAoOCy@AmCBmANqBLqAZkB\\iCPiBJwCCsASiCq@iD]eA]y@[i@w@mAa@i@k@g@kAw@i@Ya@Q]EWFMLa@~BYpAFNpA`Aj@n@X`@V`AHh@JfB@xAMvAGZGHIDIAWOEQNcC@sACYK[MSOMe@QKKKYOs@UYQISCQ?Q@WNo@r@OHGAGCKOQ_BU}@MQGG]Io@@c@FYNg@d@s@d@ODQAMOMaASs@_@a@SESAQDqBn@a@RO?KK?UBU\\kA@Y?WMo@Iy@GWQ_@WSSGg@AkABQB_Ap@_A^o@b@Q@o@IS@OHi@n@OFS?OI}@iAQMQGQC}@DOIIUK{@IUOMyBo@kASOKIQCa@L[|AgATWN[He@?QKw@FOPCh@Fx@l@TDLELKl@aAHIJEX@r@ZTDV@LENQVg@RkA@c@MeA?WFOPMf@Ej@Fj@@LGHKDM?_@_@iC?a@HKRIl@NT?FCHMFW?YEYGWQa@GYBiAIq@Gq@L_BHSHK|@WJETSLQZs@z@_A~@uA^U`@G\\CRB\\Tl@p@Th@JZ^bB`@lAHLXVLDP?LGFSKiDBo@d@wBVi@R]VYVE\\@`@Lh@Fh@CzAk@RSDQA]GYe@eAGWSiBAWBWBIJORK`@KPOPSTg@h@}Ad@o@F[E_@EGMKUGmAEYGMIMYKs@?a@J}@@_BD_@HQJMx@e@LKHKHWAo@UoAAWFmAH}@?w@C[YwAAc@HSNM|Ao@rA}@zAq@`@a@j@eAxAuBXQj@MXSR[b@gAFg@?YISOGaAHi@Xw@v@_@d@WRSFqARUHQJc@d@m@`A[VSFUBcAEU@WFULUPa@v@Y~@UrBc@dBI~@?l@P~ABt@N`HEjA]zAEp@@p@TrBCl@CTQb@k@dAg@jAU^KJYLK@k@A[Js@d@a@b@]RgBl@[FMAw@[]G]?m@D_@F]P[Vu@t@[TMF_@Do@E_@@q@P]PWZUZw@vAkAlAGJOj@IlAMd@OR{@p@a@d@sBpD]v@a@`Aa@n@]TODgBVk@Pe@^cBfBc@Rs@La@RSPm@|@wCpDS^Wp@QZML{@l@qBbCYd@k@lAIVCZBZNTr@`@RRHZANIZQPKDW@e@CaASU?I@YTKRQx@@\\VmALYRQLCL?v@P|@D\\GJEFKDM@OCa@COOYIGm@YMUCM@]JYr@uAx@kAt@}@jAeAPWbAkBj@s@bAiAz@oAj@m@VQlAc@VQ~@aA`Au@p@Q`AIv@MZORUV_@p@iB|AoCh@q@dAaANUNWH[N{AJ[^m@t@_Av@wA\\a@`@W`@In@Al@B^E`@Wl@u@\\[VQ\\K`@Eb@?R@dAZP@d@CRExAs@\\Yt@{@LG\\MjAATINOXo@d@kAl@_AHYBOCe@QiBCm@Fq@\\wADo@AyGEeBWuB@YHu@Tu@Lk@VcCTo@d@aA\\WJE`@G~@FP?VI\\U~@sANO`@SfAMj@U\\WjAsAXS`@UNENALBHFFL?^Ml@Uj@]b@q@RUJSPkChEc@XcAb@sA|@]PaA\\OJKNER?TDTNj@Jn@?p@OfC@ZR`B@VCV_@n@{@l@WbACv@OlABnAPl@LNNHbBBNBLFFJ@^GLg@x@i@|AMP[X}@XOJKPET?l@LhAFXp@fBDRCd@S\\_@Ps@PQ@}A]S?QDe@V]b@MR[fAKt@ErAF~CANILYDKGIKe@{@Yy@e@sB[gA[c@e@YUCU?WBUHUNQPq@`AiArAMV[^e@Zc@JQJKNMz@?r@Bb@PfAAfA@VVbADn@E`@KHSEe@SMAKDKFM\\^dDCh@m@LoAQ_@@MFOZLfBEl@QbASd@KLQBOAaAc@QAQ@QHc@v@ONMJOBOCg@c@]O[EMBKFGL?RHv@ARERGNe@h@{@h@WVGNDt@JLNFPFz@LdBf@f@PJNHPF`ADPJJJDl@I`@B^Tp@bALJNDNALIf@i@PGPCt@DNE`@Uv@[dAw@RITGRCtAARBPJLPJRZxB?VEX_@vAAR?RDNHJJBh@UnBm@h@IRDRJNNJPNbBFRJLLBLCzAmAd@Uf@Gf@?P@PFJNHPFTH`BDTHNJJJ@LG`@m@^YPER@RDPHNNJRLn@HRLN^VNPHTFX@\\UlDFb@FHh@NP@HKPsB?}ASkCQ{@[y@q@}@cA{@KOCQDa@t@{CFGJCf@Nl@ZtA~@r@p@`@h@rAxBd@rA\\fARdAPjANrB?f@AtBCd@QfBkAjJOlBChA?rBFrBNlBdAfKFzAC~@Iz@Mz@Sv@s@jBmAxBi@hAWt@Sv@Qx@O`BA`@?dAPfBVpAd@`BfBlFf@fBdA~Cr@pAz@fApBhBjAt@H?IL?FBFJLx@^lHvDvh@~XnElCbAd@pGhDbAb@nAr@`Ad@`GhDnBbAxCbBrWhNJJDPARGP_@t@Qh@]pAUtAoA`Ny@jJApBBNFLJFJBv@Hb@HBF?\\
+          description: The polyline representation of the map
+        summary_polyline:
+          type: string
+          example: ki{eFvqfiVsBmA`Feh@qg@iX`B}JeCcCqGjIq~@kf@cM{KeHeX`@_GdGkSeBiXtB}YuEkPwFyDeAzAe@pC~DfGc@bIOsGmCcEiD~@oBuEkFhBcBmDiEfAVuDiAuD}NnDaNiIlCyDD_CtJKv@wGhD]YyEzBo@g@uKxGmHpCGtEtI~AuLrHkAcAaIvEgH_EaDR_FpBuBg@sNxHqEtHgLoTpIiCzKNr[sB|Es\\`JyObYeMbGsMnPsAfDxAnD}DBu@bCx@{BbEEyAoD`AmChNoQzMoGhOwX|[yIzBeFKg[zAkIdU_LiHxK}HzEh@vM_BtBg@xGzDbCcF~GhArHaIfByAhLsDiJuC?_HbHd@nL_Cz@ZnEkDDy@hHwJLiCbIrNrIvN_EfAjDWlEnEiAfBxDlFkBfBtEfDaAzBvDKdFx@|@XgJmDsHhAgD`GfElEzOwBnYdBxXgGlSc@bGdHpW|HdJztBnhAgFxc@HnCvBdA
+          description: A downsampled version of polyline
+
+    StreamSet:
+      type: object
+      properties:
+        streams:
+          $ref: '#/components/schemas/Stream'
+
+    Stream:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/StreamType'
+        data:
+          type: array
+          items:
+            oneOf:
+              - type: number
+              - type: array
+                items:
+                  type: number
+          example: [904.5, 957.8, 963.1, 989.1, 1011.9, 1049.7, 1082.4, 1098.1, 1113.2, 1124.7, 1139.2, 1142.1, 1170.4, 1173]
+          description: the data in the stream
+        series_type:
+          type: string
+        original_size:
+          type: integer
+          example: 14
+          description: the number of data points in this stream
+        resolution:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+          example: medium
+          description: the resolution of the data (time between data points)
+
+    Zones:
+      type: object
+      required:
+        - type
+        - zones
+      properties:
+        type:
+          type: string
+          enum:
+            - heartrate
+            - power
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZoneRange'
+
+    ZoneRange:
+      type: object
+      required:
+        - min
+        - max
+      properties:
+        min:
+          type: integer
+        max:
+          type: integer
+        name:
+          type: string
+
+    ActivityZone:
+      type: object
+      description: Zone data for a specific metric (e.g., heart rate or power) during an activity.
+        Basically the amount of time spent in each zone.
+      properties:
+        type:
+          type: string
+          enum:
+            - heartrate
+            - power
+          description: The type of zone data.
+          example: power
+        distribution_buckets:
+          type: array
+          description: Array of time spent in each zone.
+          items:
+            type: object
+            properties:
+              min:
+                type: number
+                description: Lower bound of the zone.
+                example: 165
+              max:
+                type: number
+                description: Upper bound of the zone.
+                example: 185
+              time:
+                type: integer
+                description: Time spent in this zone in seconds.
+                example: 254
+        sensor_based:
+          type: boolean
+          description: Whether the zone data is derived from a physical sensor.
+          example: true
+
+    Fault:
+      type: object
+      description: General error message containing HTTP code and a human-readable message about what failed,
+        as well as optional additional detail courtesy of ErrorDetail.
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          example: 400
+          description: HTTP code returned by the request (for redundancy)
+        message:
+          type: string
+          example: Invalid input provided
+          description: A description of what caused the request to fail
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorDetail'
+
+    ErrorDetail:
+      type: object
+      description: Extra detail about specific arguments or components that failed to cause this error
+      properties:
+        resource:
+          type: string
+          example: Athlete
+          description: Which part of the request (or part of the underlying server architecture) caused this error
+        field:
+          type: string
+          example: email
+          description: The field (or subsection of a component) that caused the error
+        code:
+          type: string
+          example: invalid
+          description: A machine and human readable code describing what happened
+        description:
+          type: string
+          example: Athlete email did not match regex
+          description: A human-readable error
+
+    ActivityType:
+      type: string
+      description: The type of activity. This will affect algorithms, the impact of the workout, metrics saved for the workout.
+        Note that the type is usually auto-determined from the workout file.
+      enum:
+        - run
+        - ride
+        - swim
+        - walk
+        - hike
+        - workout
+        - virtual_run
+        - virtual_ride
+      example: run
+    StreamType:
+      type: string
+      description: A selector for the type of data this Stream is.
+      enum:
+        - time
+        - distance
+        - position
+        - altitude
+        - heartrate
+        - cadence
+        - power
+        - temperature
+      example: distance
+
+    Visibility:
+      type: object
+      properties:
+        visibility:
+          type: string
+          enum:
+            - followers
+            - friends
+            - me
+            - everyone
+            - whitelist
+          description: Visibility level for an activity
+          example: everyone
+          default: everyone
+        whitelist:
+          type: array
+          items:
+            $ref: '#/components/schemas/AthleteSummary'
+          example: []
+          description: If visibility is whitelist, the only logged in accounts that can view something with this visibility
+          default: []
+      description: |
+        Visibility has two components: visibility (required) and whitelist (optional). There are 4 modes to visibility.
+        followers: only followers of this user can view this
+        me: only the owner of this can view this
+        everyone: everyone (and logged out users) can view this
+        whitelist: every AthleteSummary in the 'whitelist' parameter can view this resource
+        
+
+    ActivityTag:
+      type: string
+      description: |
+        Tags that can be applied to an activity for categorization or filtering.
+        Multiple tags can be combined to describe an activity. 
+        These tags can be about how the workout was performed (whether it was on a trainer), 
+        the type of workout (long run, training, race), or even if the run was alone.
+      enum:
+        - race
+        - training
+        - commute
+        - indoor
+        - long_run
+        - recovery
+        - virtual
+        - workout
+      example: training
+    
+
+    ClubSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The club's unique identifier.
+        name:
+          type: string
+          description: The club's name.
+        profile_medium:
+          type: string
+          format: uri
+          description: URL to a 60x60 pixel profile picture.
+        cover_photo:
+          type: string
+          format: uri
+          description: URL to a cover photo.
+        activities:
+          type: array
+          description: The activity types that count for a club. Takes precedence over sport_type.
+          items:
+            $ref: '#/components/schemas/ActivityType'
+        city:
+          type: string
+          description: The club's city.
+        state:
+          type: string
+          description: The club's state or geographical region.
+        country:
+          type: string
+          description: The club's country.
+        private:
+          type: boolean
+          description: Whether the club is private.
+        member_count:
+          type: integer
+          description: The club's member count.
+        verified:
+          type: boolean
+          description: Whether the club is verified or not.
+        url:
+          type: string
+          description: The club's vanity URL.
+
+    ClubDetail:
+      allOf:
+        - $ref: '#/components/schemas/ClubSummary'
+        - type: object
+          properties:
+            membership:
+              type: string
+              enum: [ member, pending ]
+              description: The membership status of the logged-in athlete.
+            admin:
+              type: boolean
+              description: Whether the currently logged-in athlete is an administrator of this club.
+            owner:
+              type: boolean
+              description: Whether the currently logged-in athlete is the owner of this club.
+            following_count:
+              type: integer
+              description: The number of athletes in the club that the logged-in athlete follows.
+
+
+security: []
+tags:
+  - name: activities
+    description: Activity CRUD, streams, laps
+  - name: athletes
+    description: Athlete profile and stats
+  - name: gear
+    description: Equipment management
+  - name: routes
+    description: Route creation and export
+  - name: streams
+    description: Activity and route streams

@@ -1,4 +1,5 @@
 import hashlib
+import re
 import secrets
 
 
@@ -43,6 +44,19 @@ def is_secure_password(password) -> tuple[bool, str]:
 
     return True, "" # No error, no string
 
+
+
+def is_valid_handle(handle):
+    # Check if handle is a string and length is between 3-12 characters
+    if not isinstance(handle, str) or len(handle) < 3 or len(handle) > 12:
+        return False
+
+    # Check for valid characters (letters, numbers, and common keyboard characters)
+    # Allows: a-z, A-Z, 0-9, _, -, @, #, $, %, &, *
+    valid_pattern = r'^[a-zA-Z0-9_@#$%&*-]+$'
+
+    # Check for no spaces and valid pattern
+    return ' ' not in handle and bool(re.match(valid_pattern, handle))
 
 # Password hashing with SHA-256 and random salt, pretty basic but should be enough
 def hash_password(password: str, salt: bytes = None) -> tuple[str, bytes]:
