@@ -1896,16 +1896,18 @@ components:
 
     Lap:
       type: object
-      required:
-        - lap_index
-        - distance
-        - elapsed_time
-        - start_time
       properties:
         lap_index:
           type: integer
           description: Index of the lap.
           example: 1
+        start_index:
+          type: integer
+          description: The start index of this effort in its activity's stream
+        end_index:
+          type: integer
+          description: The end index of this effort in its activity's stream
+
         distance:
           type: number
           description: meters
@@ -1926,6 +1928,10 @@ components:
           type: number
           description: Max speed in m/s.
           example: 4.0
+        elevation_gain:
+          type: number
+          description: meters
+
         start_time:
           type: string
           format: date-time
