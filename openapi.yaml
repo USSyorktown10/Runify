@@ -16,6 +16,7 @@ paths:
     post:
       summary: Create an activity
       description: Creates a manual activity or uploads an activity file for the authenticated athlete.
+      operationId: createActivity
       requestBody:
         required: true
         content:
@@ -39,6 +40,7 @@ paths:
 
   /activities/{id}:
     get:
+      operationId: getActivity
       summary: Get activity
       description: Returns details for an activity owned by the authenticated athlete.
       parameters:
@@ -55,6 +57,7 @@ paths:
       tags:
         - activities
     patch:
+      operationId: updateActivity
       summary: Update activity
       description: Update an activity owned by the authenticated athlete.
       parameters:
@@ -92,6 +95,7 @@ paths:
 
   /activities/{id}/laps:
     get:
+      operationId: getActivityLaps
       summary: List activity laps
       parameters:
         - $ref: '#/components/parameters/ActivityId'
@@ -132,6 +136,7 @@ paths:
 
   /activities/{id}/report:
     post:
+      operationId: reportActivity
       summary: Report an activity
       description: Report an activity for abuse or other issues.
       parameters:
@@ -152,6 +157,7 @@ paths:
 
   /athlete/activities:
     get:
+      operationId: getAthleteActivities
       summary: List athlete activities
       description: Returns activities for the authenticated athlete.
       parameters:
@@ -200,6 +206,7 @@ paths:
 
   /athlete:
     get:
+      operationId: getCurrentAthlete
       summary: Get authenticated athlete
       responses:
         "200":
@@ -213,6 +220,7 @@ paths:
       tags:
         - athletes
     patch:
+      operationId: updateCurrentAthlete
       summary: Update authenticated athlete
       requestBody:
         required: true
@@ -234,6 +242,7 @@ paths:
 
   /athlete/zones:
     get:
+      operationId: getAthleteZones
       summary: Get athlete zones
       description: Returns heart rate and/or power zones for the authenticated athlete.
       responses:
@@ -252,6 +261,7 @@ paths:
 
   /athletes/{id}/stats:
     get:
+      operationId: getAthleteStats
       summary: Get athlete stats
       parameters:
         - $ref: '#/components/parameters/AthleteId'
@@ -269,6 +279,7 @@ paths:
 
   /athletes/{id}/follow:
     post:
+      operationId: followAthlete
       summary: Follow an athlete
       description: Start following the specified athlete.
       parameters:
@@ -285,6 +296,7 @@ paths:
       tags:
         - athletes
     delete:
+      operationId: unfollowAthlete
       summary: Unfollow an athlete
       description: Stop following the specified athlete.
       parameters:
@@ -299,6 +311,7 @@ paths:
 
   /athletes/{id}/followers:
     get:
+      operationId: getAthleteFollowers
       summary: Get followers of an athlete
       description: Returns a list of athletes who follow the specified athlete.
       parameters:
@@ -319,6 +332,7 @@ paths:
 
   /athletes/{id}/following:
     get:
+      operationId: getAthleteFollowing
       summary: Get athletes an athlete is following
       description: Returns a list of athletes the specified athlete is following.
       parameters:
@@ -339,6 +353,7 @@ paths:
 
   /athletes/{id}/friends:
     get:
+      operation: getAthleteFriends
       summary: Get mutual friends of an athlete
       description: Returns a list of athletes who follow and are followed by the specified athlete.
       parameters:
@@ -359,6 +374,7 @@ paths:
 
   /athletes/{id}/report:
     post:
+      operationId: reportAthlete
       summary: Report an athlete
       description: Report an athlete for abuse or other issues.
       parameters:
@@ -379,6 +395,7 @@ paths:
 
   /athletes/search:
     get:
+      operationId: searchAthlete
       summary: Search athletes
       description: Search by name, username, tags
       parameters:
@@ -421,6 +438,7 @@ paths:
 
   /gear:
     post:
+      operationId: createGear
       summary: Add equipment
       requestBody:
         required: true
@@ -442,6 +460,7 @@ paths:
 
   /gear/{id}:
     get:
+      operationId: getGear
       summary: Get equipment
       parameters:
         - $ref: '#/components/parameters/GearId'
@@ -457,6 +476,7 @@ paths:
       tags:
         - gear
     patch:
+      operationId: updateGear
       summary: Update equipment
       parameters:
         - $ref: '#/components/parameters/GearId'
@@ -478,6 +498,7 @@ paths:
       tags:
         - gear
     delete:
+      operationId: deleteGear
       summary: Remove equipment
       parameters:
         - $ref: '#/components/parameters/GearId'
@@ -491,6 +512,7 @@ paths:
 
   /routes:
     post:
+      operationId: createRoute
       summary: Create route
       requestBody:
         required: true
@@ -512,6 +534,7 @@ paths:
 
   /routes/{id}:
     get:
+      operationId: getRoute
       summary: Get route
       parameters:
         - $ref: '#/components/parameters/RouteId'
@@ -566,6 +589,7 @@ paths:
 
   /routes/{id}/export/gpx:
     get:
+      operationId: exportRouteGPX
       summary: Export route GPX
       parameters:
         - $ref: '#/components/parameters/RouteId'
@@ -584,6 +608,7 @@ paths:
 
   /routes/{id}/export/tcx:
     get:
+      operationId: exportRouteTCX
       summary: Export route TCX
       parameters:
         - $ref: '#/components/parameters/RouteId'
@@ -602,6 +627,7 @@ paths:
 
   /routes/{id}/report:
     post:
+      operationId: reportRoute
       summary: Report a route
       description: Report a route for abuse or other issues.
       parameters:
@@ -622,7 +648,9 @@ paths:
 
   /athletes/{id}/routes:
     get:
+      operationId: getAthleteRoutes
       summary: List athlete routes
+      description: Get all routes created by an athlete
       parameters:
         - $ref: '#/components/parameters/AthleteId'
         - name: page
@@ -658,7 +686,11 @@ paths:
 
   /clubs:
     post:
+      operationId: createClub
       summary: Create a club
+      description: |
+        Creates a new club. 
+        Note that there will be a significant ratelimit on how many clubs can be created per 24 hours.
       requestBody:
         required: true
         content:
@@ -679,6 +711,7 @@ paths:
 
   /clubs/{id}:
     get:
+      operationId: getClub
       summary: Get club details
       description: Get club details (summary, members, tags)
       parameters:
@@ -695,6 +728,7 @@ paths:
       tags:
         - clubs
     patch:
+      operationId: updateClub
       summary: Update club details
       description: Update club details (admin only)
       parameters:
@@ -717,6 +751,7 @@ paths:
       tags:
         - clubs
     delete:
+      operationId: deleteClub
       summary: Delete a club
       description: Delete a club (admin only)
       parameters:
@@ -731,6 +766,7 @@ paths:
 
   /clubs/{id}/leaderboard:
     get:
+      operationId: getClubLeaderboard
       summary: Club leaderboard
       description: Club leaderboard (distance/time/pace/etc.)
       parameters:
@@ -763,6 +799,7 @@ paths:
 
   /clubs/{id}/posts:
     get:
+      operationId: listClubPosts
       summary: List posts in a club
       parameters:
         - $ref: '#/components/parameters/ClubId'
@@ -794,6 +831,7 @@ paths:
       tags:
         - clubs
     post:
+      operationId: createClubPost
       summary: Create a post in a club
       description: Create a post in a club (admin only)
       parameters:
@@ -818,6 +856,7 @@ paths:
 
   /clubs/{id}/posts/{postId}:
     patch:
+      operationId: editClubPost
       summary: Edit a club post
       description: Edit a post in a club (admin only)
       parameters:
@@ -847,6 +886,7 @@ paths:
       tags:
         - clubs
     delete:
+      operationId: deleteClubPost
       summary: Delete a club post
       description: Delete a post in a club (admin only)
       parameters:
@@ -868,6 +908,7 @@ paths:
 
   /clubs/{id}/members:
     get:
+      operationId: listClubMembers
       summary: List members
       parameters:
         - $ref: '#/components/parameters/ClubId'
@@ -918,6 +959,7 @@ paths:
 
   /clubs/{id}/leave:
     delete:
+      operation: leaveClub
       summary: Leave a club
       parameters:
         - $ref: '#/components/parameters/ClubId'
@@ -931,6 +973,7 @@ paths:
 
   /clubs/{id}/report:
     post:
+      operationId: reportClub
       summary: Report a club
       description: Report a club for abuse or other issues.
       parameters:
@@ -951,6 +994,7 @@ paths:
 
   /clubs/{id}/invite:
     patch:
+      operationId: inviteToClub
       summary: Invite to club
       parameters:
         - $ref: '#/components/parameters/ClubId'
@@ -960,8 +1004,6 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - athlete_id
               properties:
                 athlete_id:
                   type: integer
@@ -977,6 +1019,7 @@ paths:
 
   /clubs/{id}/kick/{userId}:
     delete:
+      operationId: kickAthleteFromClub
       summary: Kick user from club
       parameters:
         - $ref: '#/components/parameters/ClubId'
@@ -997,6 +1040,7 @@ paths:
 
   /activities/{id}/streams:
     get:
+      operationId: getActivityStreams
       summary: Get activity streams
       description: Returns streams (time, distance, position, heartrate, etc.) for a given activity.
       parameters:
@@ -1033,7 +1077,9 @@ paths:
 
   /routes/{id}/streams:
     get:
+      operationId: getRouteStreams
       summary: Get route streams
+      description: Returns streams for position and altitude for a route
       parameters:
         - $ref: '#/components/parameters/RouteId'
       responses:
@@ -1051,6 +1097,7 @@ paths:
 
   /auth/signup:
     post:
+      operationId: signup
       summary: Sign up a new user
       requestBody:
         required: true
@@ -1072,6 +1119,7 @@ paths:
 
   /auth/login:
     post:
+      operationId: login
       summary: Log in a user
       requestBody:
         required: true
@@ -1092,6 +1140,7 @@ paths:
         - auth
 
   /auth/logout:
+    operationId: logout
     post:
       summary: Log out the current user
       responses:
