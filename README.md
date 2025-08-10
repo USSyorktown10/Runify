@@ -21,9 +21,10 @@ Web Server: Flask
 
 Note that to ease development (*cough* have a language that everyone knows), we will be writing the backend in Python. This is (obviously) not ideal performance-wise, but should be "good enough" for the scale of this project.
 
+Runify in C coming soom (not really, more like 2029 or something like that)
 
 ### Contributors
 
-**[USSyorktown10](https://github.com/USSyorktown10)** (creator / developer)
+**[USSyorktown10](https://github.com/USSyorktown10)** (Creator, Developer)
 
-**[quantumbagel](https://github.com/quantumbagel)** (developer)
+**[quantumbagel](https://github.com/quantumbagel)** (Developer)
