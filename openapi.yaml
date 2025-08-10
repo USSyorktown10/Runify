@@ -1716,102 +1716,76 @@ components:
           $ref: '#/components/schemas/Athlete'
 
     Activity:
-      type: object
-      required:
-        - id
-        - name
-        - type
-        - start_time
-        - elapsed_time
-      properties:
-        id:
-          type: integer
-          description: Unique identifier for the activity.
-          example: 12345
-        name:
-          type: string
-          description: Name of the activity.
-          example: "Morning Run"
-        type:
-          $ref: '#/components/schemas/ActivityType'
-        visibility:
-          $ref: '#/components/schemas/Visibility'
-        invisible:
-          type: boolean
-          default: false
-          description: If true, don't use this activity in relative effort or other calculations. Visibility still governs who can see this activity though
-          example: false
-        description:
-          type: string
-          description: Description of the activity.
-          example: "Easy run"
-        distance:
-          type: number
-          description: meters
-          example: 5000.0
-        elapsed_time:
-          type: integer
-          description: seconds
-          example: 1800
-        moving_time:
-          type: integer
-          description: seconds
-          example: 1700
-        start_time:
-          type: string
-          format: date-time
-          description: Start time.
-          example: "2025-08-09T08:00:00Z"
-        elevation_gained:
-          type: number
-          description: meters
-          example: 100.0
-        average_speed:
-          type: number
-          description: meters/second
-          example: 2.78
-        max_speed:
-          type: number
-          description: meters/second
-          example: 4.0
-        gear_id:
-          type: string
-          description: Gear used.
-          example: "g123"
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/ActivityTag'
-        hidden_stats:
-          type: array
-          items:
-            type: string
-          description: Hidden stats.
-          example: ["heartrate"]
-        laps:
-          type: array
-          items:
-            $ref: '#/components/schemas/Lap'
-        athlete:
-          $ref: '#/components/schemas/AthleteSummary'
-        map:
-          $ref: '#/components/schemas/Map'
-        created:
-          type: string
-          format: date-time
-          description: Creation time.
-          example: "2025-08-09T08:00:00Z"
-        updated:
-          type: string
-          format: date-time
-          description: Last update time.
-          example: "2025-08-09T09:00:00Z"
-        perceived_exertion:
-          type: integer
-          example: 4
-          minimum: 1
-          maximum: 10
-          description: Perceived exertion (how athlete felt after workout)
+      allOf:
+        - $ref: "#/components/schemas/SummaryActivity"
+        - type: object
+          properties:
+            description:
+              type: string
+              description: Description of the activity.
+              example: "Easy run"
+            elapsed_time:
+              type: integer
+              description: seconds
+              example: 1800
+            elevation_gained:
+              type: number
+              description: meters
+              example: 100.0
+            average_speed:
+              type: number
+              description: meters/second
+              example: 2.78
+            max_speed:
+              type: number
+              description: meters/second
+              example: 4.0
+            average_cadence:
+              type: number
+              description: steps/minute
+              example: 129
+            max_cadence:
+              type: number
+              description: steps/minute
+              example: 183
+            average_heartrate:
+              type: number
+              description: beats/minute
+              example: 178
+            max_heartrate:
+              type: number
+              description: beats/minute
+              example: 199
+            min_elevation:
+              type: number
+              description: meters above sea level
+              example: 620
+            max_elevation:
+              type: number
+              description: meters above sea level
+              example: 693
+            gear_id:
+              type: string
+              description: Gear used.
+              example: "g123"
+            tags:
+              type: array
+              items:
+                $ref: '#/components/schemas/ActivityTag'
+            hidden_stats:
+              type: array
+              items:
+                type: string
+              description: Hidden stats.
+              example: ["heartrate"]
+            laps:
+              type: array
+              items:
+                $ref: '#/components/schemas/Lap'
+            athlete:
+              $ref: '#/components/schemas/AthleteSummary'
+            map:
+              $ref: '#/components/schemas/Map'
 
 
     SummaryActivity:
@@ -1831,6 +1805,23 @@ components:
           type: string
           description: Name.
           example: "Run"
+        invisible:
+          type: boolean
+          default: false
+          description: If true, don't use this activity in relative effort or other calculations. Visibility still governs who can see this activity though
+          example: false
+        city:
+          type: string
+          description: City of the club.
+          example: "Boston"
+        state:
+          type: string
+          description: State or region.
+          example: "Massachusetts"
+        country:
+          type: string
+          description: Country.
+          example: "USA"
         type:
           $ref: '#/components/schemas/ActivityType'
         distance:
@@ -1864,6 +1855,10 @@ components:
           minimum: 1
           maximum: 10
           description: Perceived exertion (how athlete felt after workout)
+        manual:
+          type: bool
+          example: false
+          description: If the workout was manually added vs file
 
     Comment:
       type: object
@@ -1972,6 +1967,8 @@ components:
               type: integer
               description: Number of friends.
               example: 30
+            preferences:
+              $ref: "#/components/schemas/Preferences"
 
     AthleteSummary:
       type: object
@@ -2030,6 +2027,19 @@ components:
           format: date-time
           description: Last update date.
           example: "2025-08-09T00:00:00Z"
+
+    Preferences:
+      type: object
+      properties:
+        units:
+          type: string
+          enum:
+            imperial
+            metric
+          default: metric
+          description: Whether the user wants feet/miles or meters/kilometers
+          example: metric
+
 
     Stats:
       type: object
