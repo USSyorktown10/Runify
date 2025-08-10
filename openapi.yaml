@@ -962,7 +962,7 @@ paths:
 
   /clubs/{id}/leave:
     delete:
-      operation: leaveClub
+      operationId: leaveClub
       summary: Leave a club
       parameters:
         - $ref: '#/components/parameters/ClubId'
