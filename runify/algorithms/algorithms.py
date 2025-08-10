@@ -93,6 +93,74 @@ def calculate_tss(activity, advanced_stats, basic_stats, watts):
         tss *= (1 + gradient * 0.1)  # Adjust multiplier as needed
     return tss
 
+def calculate_air_density(act):
+    '''The following is using International Standard Atmosphere (ISA) model as a basis'''        
+    try:
+        # Temperature calculation
+        if act.get('average_temp'):
+            if act['average_temp'] is None:
+                T = ISA_SEA_LEVEL_TEMP_C - LAPSE_RATE * act['elev_high'] if act['elev_high'] <= TROPOPAUSE_ALT else TROPOPAUSE_TEMP_C
+            else:
+                T = act['average_temp']
+            T_kelvin = T + 273.15
+
+            # Precompute constants
+            sea_level_temp_K = ISA_SEA_LEVEL_TEMP_C + 273.15
+            exponent = GRAVITY / (LAPSE_RATE * GAS_CONST)
+
+            # Pressure calculation
+            if act['elev_high'] <= TROPOPAUSE_ALT:
+                P = ISA_SEA_LEVEL_PRESSURE_PA * (T_kelvin / sea_level_temp_K) ** exponent
+            else:
+                tropopause_temp_K = TROPOPAUSE_TEMP_C + 273.15
+                P_tropopause = ISA_SEA_LEVEL_PRESSURE_PA * (tropopause_temp_K / sea_level_temp_K) ** exponent
+                P = P_tropopause * math.exp(-GRAVITY * (act['elev_high'] - TROPOPAUSE_ALT) / (GAS_CONST * T_kelvin))
+
+            # Air density calculation
+            air_density = P / (GAS_CONST * T_kelvin)
+        else:
+            T = ISA_SEA_LEVEL_TEMP_C - LAPSE_RATE * act['elev_high'] if act['elev_high'] <= TROPOPAUSE_ALT else TROPOPAUSE_TEMP_C
+            T_kelvin = T + 273.15
+
+            # Precompute constants
+            sea_level_temp_K = ISA_SEA_LEVEL_TEMP_C + 273.15
+            exponent = GRAVITY / (LAPSE_RATE * GAS_CONST)
+
+            # Pressure calculation
+            if act['elev_high'] <= TROPOPAUSE_ALT:
+                # Assuming a standard lapse rate (temperature decrease with altitude)
+                lapse_rate = 0.0065  # K/m (approximate lapse rate in the troposphere)
+                estimated_T_kelvin = ISA_SEA_LEVEL_TEMP_K - (lapse_rate * act['elev_high'])
+                P = ISA_SEA_LEVEL_PRESSURE_PA * (estimated_T_kelvin / ISA_SEA_LEVEL_TEMP_K) ** EXPONENT
+            else:
+                # For altitudes above the tropopause, use tropopause values and an exponential decay
+                tropopause_temp_K = TROPOPAUSE_TEMP_C + 273.15
+                P_tropopause = ISA_SEA_LEVEL_PRESSURE_PA * (tropopause_temp_K / ISA_SEA_LEVEL_TEMP_K) ** EXPONENT
+                P = P_tropopause * math.exp(-GRAVITY * (act['elev_high'] - TROPOPAUSE_ALT) / (GAS_CONST * tropopause_temp_K)) # Use tropopause temp for this part of the calculation, assuming a constant temperature in the stratosphere
+
+            # Air density calculation
+            air_density = P / (GAS_CONST * T_kelvin)
+            return air_density
+    except Exception as e:
+        return e
+    
+def calculate_avg_watts(act, advanced_stats, basic_stats, velocity_mps, air_density, gravity):
+    cadence_sec = act['average_cadence'] / 60.0
+    watts = (1.036 * basic_stats['weight'] * velocity_mps) + (basic_stats['weight'] * gravity * advanced_stats['hosc'] * cadence_sec) + (0.5 * air_density * advanced_stats['afrontal'] * 1.4 * velocity_mps**3) + (basic_stats['weight'] * gravity * velocity_mps * act['total_elevation_gain'] / act['distance'])
+    return watts
+
+def calculate_gravity(act):
+    '''The following is using Newtons Law of Universal Gravitation'''
+    # Universal Gravitational Constant (m^3 kg^-1 s^-2)
+    G = 6.67430 * (10**-11) 
+    # Mass of Earth (kg)
+    M = 5.9722 * (10**24)
+    # Mean radius of Earth (m)
+    R = 6.371 * (10**6)
+    r = R + act['elev_high']  # Distance from Earth's center to the object
+    gravity = (G * M) / (r**2)
+    return gravity
+
 def get_user_fitness(activities, advanced_stats, basic_stats, banister_params=joblib.load('banister_params.pkl'), current_user=None): 
     now = datetime.now(timezone.utc)
     fitness_records: List[UserFitness] = []
@@ -127,69 +195,12 @@ def get_user_fitness(activities, advanced_stats, basic_stats, banister_params=jo
             day = activity_timestamp.date().isoformat()
             velocity_mps = act['distance'] / act['elapsed_time']
 
-            '''The following is using Newtons Law of Universal Gravitation'''
-            # Universal Gravitational Constant (m^3 kg^-1 s^-2)
-            G = 6.67430 * (10**-11) 
-            # Mass of Earth (kg)
-            M = 5.9722 * (10**24)
-            # Mean radius of Earth (m)
-            R = 6.371 * (10**6)
-            r = R + act['elev_high']  # Distance from Earth's center to the object
-            gravity = (G * M) / (r**2)
-
-            '''The following is using International Standard Atmosphere (ISA) model as a basis'''        
-            try:
-                # Temperature calculation
-                if act.get('average_temp'):
-                    if act['average_temp'] is None:
-                        T = ISA_SEA_LEVEL_TEMP_C - LAPSE_RATE * act['elev_high'] if act['elev_high'] <= TROPOPAUSE_ALT else TROPOPAUSE_TEMP_C
-                    else:
-                        T = act['average_temp']
-                    T_kelvin = T + 273.15
-
-                    # Precompute constants
-                    sea_level_temp_K = ISA_SEA_LEVEL_TEMP_C + 273.15
-                    exponent = GRAVITY / (LAPSE_RATE * GAS_CONST)
-
-                    # Pressure calculation
-                    if act['elev_high'] <= TROPOPAUSE_ALT:
-                        P = ISA_SEA_LEVEL_PRESSURE_PA * (T_kelvin / sea_level_temp_K) ** exponent
-                    else:
-                        tropopause_temp_K = TROPOPAUSE_TEMP_C + 273.15
-                        P_tropopause = ISA_SEA_LEVEL_PRESSURE_PA * (tropopause_temp_K / sea_level_temp_K) ** exponent
-                        P = P_tropopause * math.exp(-GRAVITY * (act['elev_high'] - TROPOPAUSE_ALT) / (GAS_CONST * T_kelvin))
-
-                    # Air density calculation
-                    air_density = P / (GAS_CONST * T_kelvin)
-                else:
-                    T = ISA_SEA_LEVEL_TEMP_C - LAPSE_RATE * act['elev_high'] if act['elev_high'] <= TROPOPAUSE_ALT else TROPOPAUSE_TEMP_C
-                    T_kelvin = T + 273.15
-
-                    # Precompute constants
-                    sea_level_temp_K = ISA_SEA_LEVEL_TEMP_C + 273.15
-                    exponent = GRAVITY / (LAPSE_RATE * GAS_CONST)
-
-                    # Pressure calculation
-                    if act['elev_high'] <= TROPOPAUSE_ALT:
-                        # Assuming a standard lapse rate (temperature decrease with altitude)
-                        lapse_rate = 0.0065  # K/m (approximate lapse rate in the troposphere)
-                        estimated_T_kelvin = ISA_SEA_LEVEL_TEMP_K - (lapse_rate * act['elev_high'])
-                        P = ISA_SEA_LEVEL_PRESSURE_PA * (estimated_T_kelvin / ISA_SEA_LEVEL_TEMP_K) ** EXPONENT
-                    else:
-                        # For altitudes above the tropopause, use tropopause values and an exponential decay
-                        tropopause_temp_K = TROPOPAUSE_TEMP_C + 273.15
-                        P_tropopause = ISA_SEA_LEVEL_PRESSURE_PA * (tropopause_temp_K / ISA_SEA_LEVEL_TEMP_K) ** EXPONENT
-                        P = P_tropopause * math.exp(-GRAVITY * (act['elev_high'] - TROPOPAUSE_ALT) / (GAS_CONST * tropopause_temp_K)) # Use tropopause temp for this part of the calculation, assuming a constant temperature in the stratosphere
-
-                    # Air density calculation
-                    air_density = P / (GAS_CONST * T_kelvin)
-            except Exception as e:
-                print("Air density problem")
-                print(e)
+            air_density = calculate_air_density(act)
+            gravity = calculate_gravity(act)
             
-            cadence_sec = act['average_cadence'] / 60.0
-            watts = (1.036 * basic_stats['weight'] * velocity_mps) + (basic_stats['weight'] * gravity * advanced_stats['hosc'] * cadence_sec) + (0.5 * air_density * advanced_stats['afrontal'] * 1.4 * velocity_mps**3) + (basic_stats['weight'] * gravity * velocity_mps * act['total_elevation_gain'] / act['distance'])
-
+            watts = calculate_avg_watts(act, advanced_stats, basic_stats, velocity_mps, air_density, gravity)
+            
+            act['watts'] = watts
             act['relative_effort'] = calculate_tss(act, advanced_stats, basic_stats, watts)
             re_today += act['relative_effort'] 
             re_list.append(act['relative_effort'])
@@ -235,7 +246,7 @@ def get_user_fitness(activities, advanced_stats, basic_stats, banister_params=jo
 
     return fitness_records
 
-def get_activity_fitness_changes(activity_id, current_user, activity_data, previous_data):
+def get_activity_fitness_changes(activity_id, activity_data, previous_data):
     if not activity_data:
         return None
 
