@@ -54,7 +54,7 @@ paths:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - activities
-    put:
+    patch:
       summary: Update activity
       description: Update an activity owned by the authenticated athlete.
       parameters:
@@ -212,7 +212,7 @@ paths:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - athletes
-    put:
+    patch:
       summary: Update authenticated athlete
       requestBody:
         required: true
@@ -456,7 +456,7 @@ paths:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - gear
-    put:
+    patch:
       summary: Update equipment
       parameters:
         - $ref: '#/components/parameters/GearId'
@@ -539,7 +539,7 @@ paths:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - routes
-    put:
+    patch:
       summary: Update Route
       description: Updates a route owned by the authenticated athlete.
       operationId: updateRoute
@@ -801,7 +801,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/CreateClubPostRequest'
       responses:
@@ -811,6 +811,56 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClubPost'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+
+  /clubs/{id}/posts/{postId}:
+    patch:
+      summary: Edit a club post
+      description: Edit a post in a club (admin only)
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+        - name: postId
+          in: path
+          required: true
+          description: Post identifier
+          schema:
+            type: integer
+            example: 789
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateClubPostRequest'
+      responses:
+        "200":
+          description: OK — updated ClubPost object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubPost'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - clubs
+    delete:
+      summary: Delete a club post
+      description: Delete a post in a club (admin only)
+      parameters:
+        - $ref: '#/components/parameters/ClubId'
+        - name: postId
+          in: path
+          required: true
+          description: Post identifier
+          schema:
+            type: integer
+            example: 789
+      responses:
+        '204':
+          description: Post successfully deleted. No content returned.
         default:
           $ref: '#/components/responses/FaultResponse'
       tags:
@@ -998,6 +1048,59 @@ paths:
       tags:
         - streams
         - routes
+
+  /auth/signup:
+    post:
+      summary: Sign up a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        "201":
+          description: User created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Athlete'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - auth
+
+  /auth/login:
+    post:
+      summary: Log in a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        "200":
+          description: Logged in successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - auth
+
+  /auth/logout:
+    post:
+      summary: Log out the current user
+      responses:
+        "200":
+          description: Logged out successfully.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - auth
 
 components:
   parameters:
@@ -1423,12 +1526,59 @@ components:
     CreateClubPostRequest:
       type: object
       required:
-        - text
+        - title
+        - description
       properties:
-        text:
+        title:
           type: string
-          description: Text content of the post.
-          example: "Upcoming group run!"
+          description: Title of the post.
+          example: "Group Run Announcement"
+        description:
+          type: string
+          description: Description content of the post.
+          example: "Join us for a group run this weekend!"
+        link:
+          type: string
+          format: uri
+          description: Optional clickable link.
+          example: "https://example.com/event"
+        embed_image:
+          type: string
+          format: binary
+          description: Optional image file to embed.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Optional tags for the post.
+          example: ["announcement", "event"]
+
+    UpdateClubPostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Updated title.
+          example: "Updated Group Run"
+        description:
+          type: string
+          description: Updated description.
+          example: "Updated: Join us this weekend!"
+        link:
+          type: string
+          format: uri
+          description: Updated link.
+          example: "https://example.com/updated-event"
+        embed_image:
+          type: string
+          format: binary
+          description: Updated image file.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Updated tags.
+          example: ["announcement"]
 
     ReportRequest:
       type: object
@@ -1443,6 +1593,62 @@ components:
           type: string
           description: Detailed description of the issue.
           example: "The content violates community guidelines."
+
+    SignupRequest:
+      type: object
+      required:
+        - username
+        - password
+        - email
+        - firstname
+        - lastname
+      properties:
+        username:
+          type: string
+          description: Username for the new account.
+          example: "newuser"
+        password:
+          type: string
+          description: Password for the new account.
+          example: "securepassword123"
+        email:
+          type: string
+          format: email
+          description: Email address.
+          example: "newuser@example.com"
+        firstname:
+          type: string
+          description: First name.
+          example: "New"
+        lastname:
+          type: string
+          description: Last name.
+          example: "User"
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: Username. Can also be email
+          example: "existinguser"
+        password:
+          type: string
+          description: Password.
+          example: "password123"
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Authentication token.
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        athlete:
+          $ref: '#/components/schemas/Athlete'
 
     Activity:
       type: object
@@ -1525,6 +1731,16 @@ components:
           $ref: '#/components/schemas/AthleteSummary'
         map:
           $ref: '#/components/schemas/Map'
+        created:
+          type: string
+          format: date-time
+          description: Creation time.
+          example: "2025-08-09T08:00:00Z"
+        updated:
+          type: string
+          format: date-time
+          description: Last update time.
+          example: "2025-08-09T09:00:00Z"
 
     SummaryActivity:
       type: object
@@ -1557,9 +1773,19 @@ components:
           type: string
           format: date-time
           description: Start time.
-          example: "2025-08-09T07:00:00Z"
+          example: "2025-08-08T07:00:00Z"
         visibility:
           $ref: '#/components/schemas/Visibility'
+        created:
+          type: string
+          format: date-time
+          description: Creation time.
+          example: "2025-08-08T07:00:00Z"
+        updated:
+          type: string
+          format: date-time
+          description: Last update time.
+          example: "2025-08-08T08:00:00Z"
 
     Comment:
       type: object
@@ -1568,7 +1794,7 @@ components:
         - activity_id
         - athlete
         - text
-        - created_at
+        - created
       properties:
         id:
           type: integer
@@ -1584,11 +1810,16 @@ components:
           type: string
           description: Comment text.
           example: "Great run!"
-        created_at:
+        created:
           type: string
           format: date-time
           description: Creation time.
           example: "2025-08-09T10:00:00Z"
+        updated:
+          type: string
+          format: date-time
+          description: Last update time.
+          example: "2025-08-09T11:00:00Z"
 
     Lap:
       type: object
@@ -1843,11 +2074,16 @@ components:
           $ref: '#/components/schemas/Map'
         athlete:
           $ref: '#/components/schemas/AthleteSummary'
-        created_at:
+        created:
           type: string
           format: date-time
           description: when the Route was created
           example: 2025-08-08T15:20:23Z
+        updated:
+          type: string
+          format: date-time
+          description: Last update time.
+          example: 2025-08-08T16:20:23Z
 
     Map:
       type: object
@@ -2146,6 +2382,16 @@ components:
           type: string
           description: The club's vanity URL.
           example: "localrunners"
+        created:
+          type: string
+          format: date-time
+          description: Creation time.
+          example: "2025-08-09T12:00:00Z"
+        updated:
+          type: string
+          format: date-time
+          description: Last update time.
+          example: "2025-08-09T13:00:00Z"
 
     Club:
       allOf:
@@ -2205,23 +2451,49 @@ components:
       type: object
       required:
         - id
-        - text
-        - created_at
+        - title
+        - description
+        - created
         - athlete
       properties:
         id:
           type: integer
           description: Post ID.
           example: 789
-        text:
+        title:
           type: string
-          description: Post text.
-          example: "Event announcement"
-        created_at:
+          description: Title of the post.
+          example: "Event Announcement"
+        description:
+          type: string
+          description: Description of the post.
+          example: "Upcoming group run!"
+        link:
+          type: string
+          format: uri
+          description: Optional clickable link.
+          example: "https://example.com/event"
+        embed_image_url:
+          type: string
+          format: uri
+          description: Optional link to embedded image.
+          example: "https://example.com/image.jpg"
+        tags:
+          type: array
+          items:
+            type: string
+          description: Optional tags.
+          example: ["announcement"]
+        created:
           type: string
           format: date-time
           description: Creation time.
           example: "2025-08-09T12:00:00Z"
+        updated:
+          type: string
+          format: date-time
+          description: Last update time.
+          example: "2025-08-09T13:00:00Z"
         athlete:
           $ref: '#/components/schemas/AthleteSummary'
 
@@ -2253,3 +2525,5 @@ tags:
     description: Activity and route streams
   - name: clubs
     description: Club management and interactions
+  - name: auth
+    description: Authentication endpoints
