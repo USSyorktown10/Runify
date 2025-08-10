@@ -2455,11 +2455,6 @@ components:
               type: boolean
               description: Whether the currently logged-in athlete is the owner of this club.
               example: false
-            members:
-              type: array
-              items:
-                $ref: '#/components/schemas/ClubAthlete'
-              description: List of members.
             tags:
               type: array
               items:
