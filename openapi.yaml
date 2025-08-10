@@ -2021,6 +2021,7 @@ components:
           enum:
             - M
             - F
+            - cardboard_box
           description: Sex.
           example: "M"
         created:
