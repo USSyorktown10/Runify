@@ -278,6 +278,24 @@ paths:
       tags:
         - athletes
 
+  /athletes/{id}/records:
+    get:
+      operationId: getAthletePersonalRecords
+      summary: Get an athlete's best times.
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+      responses:
+        "200":
+          description: OK — PersonalRecords object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalRecords'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+
   /athletes/{id}/follow:
     post:
       operationId: followAthlete
@@ -2034,6 +2052,27 @@ components:
           format: date-time
           description: Last update date.
           example: "2025-08-09T00:00:00Z"
+
+    PersonalRecords:
+      type: array
+      items:
+        $ref: "#/components/schemas/PersonalRecord"
+
+    PersonalRecord:
+      type: object
+      properties:
+        distance:
+          type: integer
+          description: Distance (meters)
+          example: 5000
+        time:
+          type: number
+          description: Time (s)
+          example: 983
+        name:
+          type: string
+          description: human-readable name
+          example: 5k
 
     Preferences:
       type: object
