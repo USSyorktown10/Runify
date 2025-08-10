@@ -1257,6 +1257,12 @@ components:
           type: number
           description: Total elevation gained in meters.
           example: 150.5
+        perceived_exertion:
+          type: integer
+          example: 4
+          minimum: 1
+          maximum: 10
+          description: Perceived exertion (how athlete felt after workout)
 
     CreateActivityFileRequest:
       type: object
@@ -1303,6 +1309,12 @@ components:
             - fit
           description: Type of the uploaded file.
           example: "gpx"
+        perceived_exertion:
+          type: integer
+          example: 4
+          minimum: 1
+          maximum: 10
+          description: Perceived exertion (how athlete felt after workout)
 
     UpdateActivityRequest:
       type: object
@@ -1794,6 +1806,13 @@ components:
           format: date-time
           description: Last update time.
           example: "2025-08-09T09:00:00Z"
+        perceived_exertion:
+          type: integer
+          example: 4
+          minimum: 1
+          maximum: 10
+          description: Perceived exertion (how athlete felt after workout)
+
 
     SummaryActivity:
       type: object
@@ -1839,6 +1858,12 @@ components:
           format: date-time
           description: Last update time.
           example: "2025-08-08T08:00:00Z"
+        perceived_exertion:
+          type: integer
+          example: 4
+          minimum: 1
+          maximum: 10
+          description: Perceived exertion (how athlete felt after workout)
 
     Comment:
       type: object
