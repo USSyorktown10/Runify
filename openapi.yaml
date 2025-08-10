@@ -134,6 +134,7 @@ paths:
       tags:
         - activities
 
+
   /activities/{id}/report:
     post:
       operationId: reportActivity
@@ -155,6 +156,56 @@ paths:
       tags:
         - activities
         - reports
+
+  /athletes/{id}/activities:
+    get:
+      operationId: getAthleteActivitiesById
+      summary: List activities for an athlete
+      description: Returns activities for the specified athlete.
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+        - name: before
+          in: query
+          description: Epoch timestamp (seconds) — return activities before this time.
+          schema:
+            type: integer
+            example: 1723171200
+        - name: after
+          in: query
+          description: Epoch timestamp (seconds) — return activities after this time.
+          schema:
+            type: integer
+            example: 1722480000
+        - name: page
+          in: query
+          description: Page number for pagination.
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: page_size
+          in: query
+          description: Number of activities per page.
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+            minimum: 1
+            example: 10
+      responses:
+        "200":
+          description: OK — array of SummaryActivity objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SummaryActivity'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - activities
+        - athletes
 
   /athlete/activities:
     get:
@@ -278,6 +329,43 @@ paths:
       tags:
         - athletes
 
+
+  /athlete/stats:
+    get:
+      operationId: getCurrentAthleteStats
+      summary: Get the authenticated athlete's stats
+      description: Returns stats for the authenticated athlete. Equivalent to /athletes/{id}/stats where {id} is the current user's ID.
+      responses:
+        "200":
+          description: OK — Stats object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+
+
+  /athlete/records:
+    get:
+      operationId: getCurrentAthletePersonalRecords
+      summary: Get the authenticated athlete's best times.
+      description: Returns the personal records for the authenticated athlete. Equivalent to /athletes/{id}/records where {id} is the current user's ID.
+      responses:
+        "200":
+          description: OK — PersonalRecords object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalRecords'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+
+
   /athletes/{id}/records:
     get:
       operationId: getAthletePersonalRecords
@@ -295,6 +383,80 @@ paths:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - athletes
+  /athletes/{id}/clubs:
+    get:
+      operationId: getAthleteClubs
+      summary: List clubs an athlete is in
+      description: Returns a paginated list of clubs the specified athlete is a member of.
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+        - name: page
+          in: query
+          description: Page number for pagination.
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: page_size
+          in: query
+          description: Number of clubs per page.
+          schema:
+            type: integer
+            default: 30
+            maximum: 50
+            minimum: 1
+            example: 30
+      responses:
+        "200":
+          description: OK — array of ClubSummary objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClubSummary'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+        - clubs
+
+  /athlete/clubs:
+    get:
+      operationId: getCurrentAthleteClubs
+      summary: List clubs the authenticated athlete is in
+      description: Returns a paginated list of clubs the authenticated athlete is a member of. Equivalent to /athletes/{id}/clubs where {id} is the current user's ID.
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination.
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: page_size
+          in: query
+          description: Number of clubs per page.
+          schema:
+            type: integer
+            default: 30
+            maximum: 50
+            minimum: 1
+            example: 30
+      responses:
+        "200":
+          description: OK — array of ClubSummary objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClubSummary'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+        - clubs
 
   /athletes/{id}/follow:
     post:
@@ -348,6 +510,24 @@ paths:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - athletes
+  /athlete/followers:
+    get:
+      operationId: getCurrentAthleteFollowers
+      summary: Get followers of the authenticated athlete
+      description: Returns a list of athletes who follow the authenticated athlete. Equivalent to /athletes/{id}/followers where {id} is the current user's ID.
+      responses:
+        '200':
+          description: A list of followers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteSummary'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
 
   /athletes/{id}/following:
     get:
@@ -370,6 +550,25 @@ paths:
       tags:
         - athletes
 
+  /athlete/following:
+    get:
+      operationId: getCurrentAthleteFollowing
+      summary: Get athletes the authenticated athlete is following
+      description: Returns a list of athletes the authenticated athlete is following. Equivalent to /athletes/{id}/following where {id} is the current user's ID.
+      responses:
+        '200':
+          description: A list of followed athletes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteSummary'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+
   /athletes/{id}/friends:
     get:
       operationId: getAthleteFriends
@@ -377,6 +576,25 @@ paths:
       description: Returns a list of athletes who follow and are followed by the specified athlete.
       parameters:
         - $ref: '#/components/parameters/AthleteId'
+      responses:
+        '200':
+          description: A list of mutual friends.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteSummary'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+
+  /athlete/friends:
+    get:
+      operationId: getCurrentAthleteFriends
+      summary: Get mutual friends of the authenticated athlete
+      description: Returns a list of athletes who follow and are followed by the authenticated athlete. Equivalent to /athletes/{id}/friends where {id} is the current user's ID.
       responses:
         '200':
           description: A list of mutual friends.
@@ -674,6 +892,43 @@ paths:
       description: Get all routes created by an athlete
       parameters:
         - $ref: '#/components/parameters/AthleteId'
+        - name: page
+          in: query
+          description: Page number for pagination.
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: page_size
+          in: query
+          description: Number of routes per page.
+          schema:
+            type: integer
+            default: 30
+            maximum: 50
+            minimum: 1
+            example: 30
+      responses:
+        "200":
+          description: OK — array of Route objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Route'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - routes
+        - athletes
+
+  /athlete/routes:
+    get:
+      operationId: getCurrentAthleteRoutes
+      summary: List the authenticated athlete's routes
+      description: Get all routes created by the authenticated athlete. Equivalent to /athletes/{id}/routes where {id} is the current user's ID.
+      parameters:
         - name: page
           in: query
           description: Page number for pagination.
@@ -1758,6 +2013,18 @@ components:
               type: number
               description: meters/second
               example: 4.0
+            average_watts:
+              type: number
+              description: watts
+              example: 200
+            maximum_watts:
+              type: number
+              description: watts
+              example: 300
+            calories_burnt:
+              type: number
+              description: calories burnt
+              example: 753.2
             average_cadence:
               type: number
               description: steps/minute
@@ -1874,7 +2141,7 @@ components:
           maximum: 10
           description: Perceived exertion (how athlete felt after workout)
         manual:
-          type: bool
+          type: boolean
           example: false
           description: If the workout was manually added vs file
 
@@ -2080,8 +2347,8 @@ components:
         units:
           type: string
           enum:
-            imperial
-            metric
+            - imperial
+            - metric
           default: metric
           description: Whether the user wants feet/miles or meters/kilometers
           example: metric
@@ -2639,8 +2906,17 @@ components:
           type: integer
           description: Rank in leaderboard.
           example: 1
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: header
+      name: X-Session-ID
+      description: Session ID required for authentication on all endpoints.
 
-security: []
+security:
+  - sessionAuth: [ ]
+
+
 tags:
   - name: activities
     description: Activity CRUD, streams, laps
