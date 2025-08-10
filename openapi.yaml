@@ -354,7 +354,7 @@ paths:
 
   /athletes/{id}/friends:
     get:
-      operation: getAthleteFriends
+      operationId: getAthleteFriends
       summary: Get mutual friends of an athlete
       description: Returns a list of athletes who follow and are followed by the specified athlete.
       parameters:
@@ -1144,8 +1144,8 @@ paths:
         - auth
 
   /auth/logout:
-    operationId: logout
     post:
+      operationId: logout
       summary: Log out the current user
       responses:
         "200":
