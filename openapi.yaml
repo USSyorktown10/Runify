@@ -154,6 +154,7 @@ paths:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - activities
+        - reports
 
   /athlete/activities:
     get:
@@ -392,6 +393,7 @@ paths:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - athletes
+        - reports
 
   /athletes/search:
     get:
@@ -645,6 +647,7 @@ paths:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - routes
+        - reports
 
   /athletes/{id}/routes:
     get:
@@ -991,6 +994,7 @@ paths:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - clubs
+        - reports
 
   /clubs/{id}/invite:
     patch:
@@ -2571,3 +2575,5 @@ tags:
     description: Club management and interactions
   - name: auth
     description: Authentication endpoints
+  - name: reports
+    description: Reporting endpoints
