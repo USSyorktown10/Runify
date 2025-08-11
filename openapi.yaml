@@ -383,6 +383,92 @@ paths:
           $ref: '#/components/responses/FaultResponse'
       tags:
         - athletes
+
+  /athlete/metrics:
+    get:
+      operationId: getCurrentAthleteMetrics
+      summary: Get advanced metrics over time for the authenticated athlete
+      description: Returns time-series data for advanced athlete metrics like VO2 max, suitable for graphing. Equivalent to /athletes/{id}/metrics where {id} is the current user's ID.
+      parameters:
+        - name: timeframe
+          in: query
+          description: The timescale for the metrics data.
+          schema:
+            type: string
+            enum:
+              - week
+              - month
+              - year
+              - all
+            default: year
+            example: month
+        - name: before
+          in: query
+          description: Epoch timestamp (seconds) — return metrics before this time. Used for custom ranges if timeframe is not specified.
+          schema:
+            type: integer
+            example: 1723171200
+        - name: after
+          in: query
+          description: Epoch timestamp (seconds) — return metrics after this time. Used for custom ranges if timeframe is not specified.
+          schema:
+            type: integer
+            example: 1722480000
+      responses:
+        "200":
+          description: OK — AthleteMetrics object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AthleteMetrics'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+
+  /athletes/{id}/metrics:
+    get:
+      operationId: getAthleteMetrics
+      summary: Get advanced metrics over time for an athlete
+      description: Returns time-series data for advanced athlete metrics like VO2 max, suitable for graphing.
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+        - name: timeframe
+          in: query
+          description: The timescale for the metrics data.
+          schema:
+            type: string
+            enum:
+              - week
+              - month
+              - year
+              - all
+            default: year
+            example: month
+        - name: before
+          in: query
+          description: Epoch timestamp (seconds) — return metrics before this time. Used for custom ranges if timeframe is not specified.
+          schema:
+            type: integer
+            example: 1723171200
+        - name: after
+          in: query
+          description: Epoch timestamp (seconds) — return metrics after this time. Used for custom ranges if timeframe is not specified.
+          schema:
+            type: integer
+            example: 1722480000
+      responses:
+        "200":
+          description: OK — AthleteMetrics object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AthleteMetrics'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - athletes
+
   /athletes/{id}/clubs:
     get:
       operationId: getAthleteClubs
@@ -1607,7 +1693,7 @@ components:
         gear_id:
           type: string
           description: Updated gear ID.
-          example: "g345678"
+          example: "3449583495678"
         tags:
           type: array
           items:
@@ -1978,6 +2064,7 @@ components:
           description: Password.
           example: "password123"
 
+
     LoginResponse:
       type: object
       properties:
@@ -2071,6 +2158,16 @@ components:
               $ref: '#/components/schemas/AthleteSummary'
             map:
               $ref: '#/components/schemas/Map'
+            grade_adjusted_pace:
+              type: number
+              description: GAP in seconds
+              example: 369
+            relative_effort:
+              type: number
+              description: UNITS?
+              example: 100
+
+
 
 
     SummaryActivity:
@@ -2341,6 +2438,42 @@ components:
           description: human-readable name
           example: 5k
 
+    AthleteMetrics:
+      type: object
+      description: Time-series data for advanced athlete metrics.
+      properties:
+        chronic_training_load:
+          type: array
+          description: CTL data values over time
+          items:
+            $ref: '#/components/schemas/MetricDataPoint'
+        acute_training_load:
+          type: array
+          description: CTL data values over time
+          items:
+            $ref: '#/components/schemas/MetricDataPoint'
+        training_stress_balance:
+          type: array
+          description: CTL data values over time
+          items:
+            $ref: '#/components/schemas/MetricDataPoint'
+
+    MetricDataPoint:
+      type: object
+      required:
+        - timestamp
+        - value
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp for the data point.
+          example: "2025-08-11T00:00:00Z"
+        value:
+          type: number
+          description: The metric value.
+          example: 50.5
+
     Preferences:
       type: object
       properties:
@@ -2578,7 +2711,7 @@ components:
           description: Name of the zone.
           example: "Zone 1"
 
-    ActivityZone:
+     Zone:
       type: object
       description: Zone data for a specific metric (e.g., heart rate or power) during an activity. Basically the amount of time spent in each zone.
       properties:
