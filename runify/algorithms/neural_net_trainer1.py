@@ -4,11 +4,10 @@ from scipy import optimize
 from sklearn.neural_network import MLPRegressor
 import joblib
 
-# Load your data
-data = pd.read_csv('algorithms/activities.csv')
-
+# ---------------------------
+# Load and parse helpers
+# ---------------------------
 def parse_elapsed_time(s):
-    # Handles "hh:mm:ss" or "mm:ss" or seconds as string/int
     if isinstance(s, (int, float)):
         return float(s)
     parts = str(s).split(':')
@@ -18,49 +17,97 @@ def parse_elapsed_time(s):
     elif len(parts) == 2:
         m, sec = parts
         return int(m) * 60 + float(sec)
-    else:
-        try:
-            return float(s)
-        except Exception:
-            return 0
+    try:
+        return float(s)
+    except Exception:
+        return 0
 
-def parse_pace(pace_str):
-    # Handles "mm:ss" or "m:ss" or "h:mm:ss"
-    if isinstance(pace_str, (int, float)):
-        return float(pace_str)
-    parts = str(pace_str).split(':')
-    if len(parts) == 3:
-        h, m, s = parts
-        return int(h) * 3600 + int(m) * 60 + float(s)
-    elif len(parts) == 2:
-        m, s = parts
-        return int(m) * 60 + float(s)
-    else:
-        try:
-            return float(pace_str)
-        except Exception:
+def parse_numeric(val):
+    """Convert to float if possible, NaN if not."""
+    try:
+        s = str(val).strip()
+        if s in ["", "--", "nan", "NaN", "None"]:
             return np.nan
+        return float(s.replace(",", ""))  # remove commas if present
+    except (ValueError, TypeError):
+        return np.nan
 
-def calculate_tss(row):
-    # Example: use duration (in seconds) and RPE (1-10 scale)
-    duration_hr = parse_elapsed_time(row['Elapsed Time']) / 3600
-    rpe = row.get('RPE', 5)  # Default to 5 if not present
-    intensity = float(rpe) / 10
-    tss = duration_hr * intensity * 100
-    return tss
 
+
+
+
+
+# ---------------------------
+# Load CSV
+# ---------------------------
 data = pd.read_csv('algorithms/activities.csv')
-if 'RPE' not in data.columns:
-    data['RPE'] = 5  # or set this from your DB if you have it
 
-data['TSS_calc'] = data.apply(calculate_tss, axis=1)
-data.to_csv('algorithms/activities_with_TSS.csv', index=False)
+# ---------------------------
+# Step 1 - Calculate TRIMP-like Load
+# ---------------------------
+def calculate_trimp(row, hr_rest=60, hr_max=190, gender_const=1.92):
+    duration_min = parse_elapsed_time(row['Elapsed Time']) / 60
+    if np.isnan(row['Avg HR']) or row['Avg HR'] == 0:
+        return np.nan
+    hr_ratio = (row['Avg HR'] - hr_rest) / (hr_max - hr_rest)
+    return duration_min * hr_ratio * gender_const
 
-data['Avg Pace (sec)'] = data['Avg Pace'].apply(parse_pace)
-Actual_Performance = data['Avg Pace (sec)'].values
-TSS = data['Training Stress Score®'].values
+data['Load'] = data.apply(calculate_trimp, axis=1)
 
-# Banister recursive model
+# Fill missing Load values with pace-based estimate
+def calculate_pace_load(row):
+    duration_hr = parse_elapsed_time(row['Elapsed Time']) / 3600
+    if duration_hr == 0:
+        return np.nan
+    distance_km = (row['Distance'])  # assuming already in km
+    if "," in distance_km:
+        distance_km = float(distance_km.replace(",", ""))
+        distance_km = distance_km / 1000  # convert to km if in meters
+    else:
+        distance_km = float(distance_km) * 1.60934 # convert miles to km
+    intensity_factor = (distance_km / duration_hr) / 10  # normalize by 10 km/h
+    return distance_km * intensity_factor
+
+data['Load'] = data['Load'].fillna(data.apply(calculate_pace_load, axis=1))
+data['Load'] = data['Load'].fillna(0)
+
+# ---------------------------
+# Step 2 - Target variable: Normalized Speed (m/s)
+# ---------------------------
+def calculate_speed(row):
+    # Get distance as float (meters)
+    try:
+        dist_str = str(row['Distance']).replace(",", "").strip()
+        distance_val = float(dist_str)
+    except (ValueError, TypeError):
+        return np.nan  # skip if completely invalid
+
+    if distance_val < 100:  # very likely miles
+        distance_m = distance_val * 1609.34
+    else:  # already in meters
+        distance_m = distance_val
+
+    # Parse elapsed time (seconds)
+    elapsed_sec = parse_elapsed_time(row['Elapsed Time'])
+    if elapsed_sec <= 0:
+        return np.nan
+
+    # Speed in m/s
+    return distance_m / elapsed_sec
+
+# Fill Speed_mps where missing
+data['Speed_mps'] = data.get('Speed_mps', np.nan)  # ensure column exists
+data['Speed_mps'] = data['Speed_mps'].fillna(data.apply(calculate_speed, axis=1))
+data['Speed_mps'] = data['Speed_mps'].fillna(0)
+
+Actual_Performance = data['Speed_mps'].values
+
+
+# ---------------------------
+# Step 3 - Banister model using new Load
+# ---------------------------
+TSS = data['Load'].values
+
 def banister_recursive(params, TSS):
     k1, k2, PO, CTLC, ATLC = params
     fitness = np.zeros_like(TSS)
@@ -75,34 +122,48 @@ def banister_loss(params):
     prediction = banister_recursive(params, TSS)
     return np.mean(np.abs(Actual_Performance - prediction))
 
-initial_guess = [0.1, 0.5, 50, 45, 15]
+initial_guess = [0.1, 0.5, np.mean(Actual_Performance), 45, 15] # type: ignore
 result = optimize.minimize(banister_loss, initial_guess)
 banister_params = result.x
 print("Banister Model Params:", banister_params)
+
+# Save params
 joblib.dump(banister_params, 'banister_params.pkl')
 
-# Neural net (optional, for performance prediction)
+# ---------------------------
+# Step 4 - Neural net with multiple inputs
+# ---------------------------
+# Also clean any other key numeric columns used in features
+numeric_cols = ['Distance', 'Avg HR', 'Total Ascent', 'Load', 'Speed_mps', 'Avg Run Cadence']
+for col in numeric_cols:
+    if col in data.columns:
+        data[col] = data[col].apply(parse_numeric)
+        
 window = 28
-Offset_Performance = [np.mean(Actual_Performance[i:i+window]) for i in range(len(Actual_Performance)-window+1)]
-Block_TSS = [np.mean(TSS[i:i+window]) for i in range(len(TSS)-window+1)]
-Block_TSS_np = np.array(Block_TSS).reshape(-1, 1)
-Offset_Performance_np = np.array(Offset_Performance)
+features = []
+targets = []
+
+for i in range(len(data) - window + 1):
+    block = data.iloc[i:i+window]
+    features.append([
+        block['Load'].mean(),
+        block['Distance'].mean(),
+        block['Avg HR'].mean(),
+        block['Avg Run Cadence'].mean(),
+        block['Total Ascent'].mean()
+    ])
+    targets.append(block['Speed_mps'].mean())
+
+features = np.array(features)
+targets = np.array(targets)
+
+mask = ~np.isnan(features).any(axis=1) & ~np.isnan(targets)
+features_clean = features[mask]
+targets_clean = targets[mask]
+
 nn_model = MLPRegressor(solver='lbfgs', activation='relu', hidden_layer_sizes=[50], random_state=42)
+nn_model.fit(features_clean, targets_clean)
 
-# Remove NaNs from Block_TSS and Offset_Performance
-mask = ~(
-    np.isnan(Block_TSS_np.flatten()) | 
-    np.isnan(Offset_Performance_np)
-)
-Block_TSS_np_clean = Block_TSS_np[mask]
-Offset_Performance_np_clean = Offset_Performance_np[mask]
+joblib.dump(nn_model, 'fitness_nn_model.pkl')
 
-# Reshape Block_TSS_np_clean for sklearn
-Block_TSS_np_clean = Block_TSS_np_clean.reshape(-1, 1)
-
-nn_model.fit(Block_TSS_np_clean, Offset_Performance_np_clean)
-
-joblib.dump(banister_params, 'banister_params.pkl')
-print(f"Training neural net on {len(Offset_Performance_np_clean)} samples (removed {len(Offset_Performance_np) - len(Offset_Performance_np_clean)} NaN rows)")
-print(data[pd.isna(data['Avg Pace (sec)'])])
-print("Neural net trained and saved.")
+print(f"Neural net trained on {len(targets_clean)} samples")
