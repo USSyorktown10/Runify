@@ -6,28 +6,145 @@ import pandas as pd
 from dataclasses import dataclass
 from typing import List
 
-@dataclass
-class UserFitness:
-    id: int  
-    user_id: int
-    activity_id: int
-    day: str  
-    watts: float
-    relative_effort: float
-    CTL: float
-    ATL: float
-    norm_CTL: float
-    norm_ATL: float
-    TSB: float
-    
-@dataclass
-class ActivityFitnessChanges:
-    relative_effort: float
-    ctl_change: float
-    atl_change: float
-    watts: float
-    tsb_change: float
+'''
+Testing new formulas i have discovered
+'''
 
+def minetti_grade_adjustment(grade_percent):
+    """
+    Minetti formula for metabolic cost adjustment based on grade
+    """
+    i = grade_percent / 100  # Convert percentage to decimal
+    cost_factor = 155.4 * (i**5) - 30.4 * (i**4) - 43.3 * (i**3) + 46.3 * (i**2) - 165 * i + 3.6
+    return cost_factor / 100  # Normalize to multiplier
+
+def strava_grade_adjustment(grade_percent):
+    """
+    Strava gets robbed
+    """
+    i = grade_percent / 100
+    relative_cost = 15.14 * (i**2) - 2.896 * i
+    return 1 + (relative_cost / 100)
+
+def simple_grade_adjustment(grade_percent):
+    """
+    Simple linear approximation: 10% grade = 30% harder
+    """
+    return 1 + (abs(grade_percent) * 0.03)
+
+def calculate_gap(pace_per_km, elevation_gain_m, distance_km):
+    """
+    pace_per_km: seconds per kilometer
+    elevation_gain_m: total elevation gain in meters
+    distance_km: distance in kilometers
+    """
+    if distance_km == 0:
+        return pace_per_km
+    
+    avg_grade_percent = (elevation_gain_m / (distance_km * 1000)) * 100
+    
+    # Use simple adjustment for now
+    adjustment_factor = simple_grade_adjustment(avg_grade_percent)
+    
+    # GAP is the equivalent flat pace
+    gap = pace_per_km / adjustment_factor
+    return gap
+
+def calculate_ngp(pace_data_per_km, elevation_data_m, distance_data_km):
+    if not pace_data_per_km or len(pace_data_per_km) == 0:
+        return 0
+    
+    # Calculate GAP for each segment
+    gap_values = []
+    for i in range(len(pace_data_per_km)):
+        pace = pace_data_per_km[i]
+        elevation = elevation_data_m[i] if i < len(elevation_data_m) else 0
+        distance = distance_data_km[i] if i < len(distance_data_km) else 1
+        
+        gap = calculate_gap(pace, elevation, distance)
+        gap_values.append(gap)
+    
+    # Convert pace to speed (km/h) for 4th power calculation
+    speeds = [3600 / gap for gap in gap_values if gap > 0]
+    
+    if not speeds:
+        return 0
+    
+    # 4th power weighting (like Normalized Power)
+    fourth_powers = [speed**4 for speed in speeds]
+    avg_fourth_power = sum(fourth_powers) / len(fourth_powers)
+    normalized_speed = avg_fourth_power ** 0.25
+    
+    # Convert back to pace (seconds per km)
+    ngp = 3600 / normalized_speed if normalized_speed > 0 else 0
+    return ngp
+
+def calculate_intensity_factor(ngp_pace_per_km, threshold_pace_per_km):
+    if threshold_pace_per_km <= 0 or ngp_pace_per_km <= 0:
+        return 0
+    
+    # Convert to speeds for proper ratio
+    ngp_speed = 3600 / ngp_pace_per_km
+    threshold_speed = 3600 / threshold_pace_per_km
+    
+    intensity_factor = ngp_speed / threshold_speed
+    return intensity_factor
+
+def calculate_rtss(duration_seconds, ngp_pace_per_km, threshold_pace_per_km):
+    if threshold_pace_per_km <= 0 or ngp_pace_per_km <= 0:
+        return 0
+    
+    intensity_factor = calculate_intensity_factor(ngp_pace_per_km, threshold_pace_per_km)
+    duration_hours = duration_seconds / 3600
+    
+    rtss = duration_hours * (intensity_factor ** 2) * 100
+    
+    return rtss
+
+def calculate_rtss_alternative(duration_seconds, ngp_pace_per_km, threshold_pace_per_km):
+    if threshold_pace_per_km <= 0 or ngp_pace_per_km <= 0:
+        return 0
+    
+    intensity_factor = calculate_intensity_factor(ngp_pace_per_km, threshold_pace_per_km)
+    
+    # (duration * ngp * intensity_factor) / (ftp * 3600) * 100
+    rtss = (duration_seconds * ngp_pace_per_km * intensity_factor) / (threshold_pace_per_km * 3600) * 100
+    
+    return rtss
+
+# Example usage and testing
+if __name__ == "__main__":
+    # Test data
+    pace_data = [300, 320, 310]  # seconds per km
+    elevation_data = [50, 100, 30]  # meters elevation gain per segment
+    distance_data = [1, 1, 1]  # km per segment
+    
+    total_duration = 930  # seconds (15.5 minutes)
+    threshold_pace = 240  # seconds per km (4:00/km threshold)
+    
+    print("=== Testing rTSS Calculations ===")
+    
+    # Calculate NGP
+    ngp = calculate_ngp(pace_data, elevation_data, distance_data)
+    print(f"NGP: {ngp:.1f} seconds/km ({ngp/60:.2f} min/km)")
+    
+    # Calculate IF
+    intensity_factor = calculate_intensity_factor(ngp, threshold_pace)
+    print(f"Intensity Factor: {intensity_factor:.3f}")
+    
+    # Calculate rTSS both ways
+    rtss1 = calculate_rtss(total_duration, ngp, threshold_pace)
+    rtss2 = calculate_rtss_alternative(total_duration, ngp, threshold_pace)
+    
+    print(f"rTSS (standard formula): {rtss1:.1f}")
+    print(f"rTSS (secondary formula): {rtss2:.1f}")
+    
+    print(f"\nDuration: {total_duration/60:.1f} minutes")
+    print(f"Threshold pace: {threshold_pace/60:.2f} min/km")
+
+'''
+The following are my simpler fomulas that im still working on.
+'''
 
 CTLmin = 0
 CTLmax = 150
@@ -49,221 +166,10 @@ lapse_rate = 0.0065  # K/m (approximate lapse rate in the troposphere)
 # Calculate EXPONENT based on the barometric formula for the troposphere
 EXPONENT = (GRAVITY * MOLAR_MASS_AIR) / (GAS_CONST * lapse_rate)
 
-def banister_recursive(params, tss_list):
-    k1, k2, PO, CTLC, ATLC = params
-    fitness = np.zeros(len(tss_list))
-    fatigue = np.zeros(len(tss_list))
-    for i in range(1, len(tss_list)):
-        fitness[i] = fitness[i-1] + (tss_list[i] - fitness[i-1]) / CTLC
-        fatigue[i] = fatigue[i-1] + (tss_list[i] - fatigue[i-1]) / ATLC
-    prediction = k1 * fitness + k2 * fatigue + PO
-    return fitness, fatigue, prediction
-
-
-def calculate_tss(activity, advanced_stats, basic_stats, watts):
-    duration_hr = activity['elapsed_time'] / 3600
-    # 1. Heart Rate
-    if activity.get('average_heartrate') and advanced_stats['max_hr'] and advanced_stats['resting_hr']:
-        hr_avg = activity['average_heartrate']
-        hr_rest = advanced_stats['resting_hr']
-        hr_max = advanced_stats['max_hr']
-        if hr_max <= hr_rest:
-            return duration_hr * 50  # fallback
-        intensity = (hr_avg - hr_rest) / (hr_max - hr_rest)
-    # 2. RPE
-    elif activity.get('rpe'):
-        rpe = float(activity.get('rpe', 5))
-        intensity = rpe / 10  # Assuming 1–10 RPE scale
-    # 3. Fastest pace
-    elif basic_stats['fastest_pace'] and activity.get('distance') and activity.get('elapsed_time'):
-        pace = activity['distance'] / activity['elapsed_time']  # m/s
-        intensity = pace / basic_stats['fastest_pace']
-    # 4. FTP
-    elif advanced_stats['ftp'] and watts:
-        intensity = watts / advanced_stats['ftp']
-    else:
-        intensity = 0.5  # fallback
-
-    intensity = max(0, min(intensity, 1))
-    tss = duration_hr * intensity * 100
-
-    # Apply terrain gradient
-    if activity.get('total_elevation_gain', 0) > 0 and activity.get('distance', 0) > 0:
-        gradient = activity['total_elevation_gain'] / activity['distance']
-        tss *= (1 + gradient * 0.1)  # Adjust multiplier as needed
+def wtss(duration, normalized_power, intensity_factor, ftp): #duration must be seconds
+    tss = (duration * normalized_power * intensity_factor) / (ftp * 3600) * 100
     return tss
 
-def calculate_air_density(act):
-    '''The following is using International Standard Atmosphere (ISA) model as a basis'''        
-    try:
-        # Temperature calculation
-        if act.get('average_temp'):
-            if act['average_temp'] is None:
-                T = ISA_SEA_LEVEL_TEMP_C - LAPSE_RATE * act['elev_high'] if act['elev_high'] <= TROPOPAUSE_ALT else TROPOPAUSE_TEMP_C
-            else:
-                T = act['average_temp']
-            T_kelvin = T + 273.15
-
-            # Precompute constants
-            sea_level_temp_K = ISA_SEA_LEVEL_TEMP_C + 273.15
-            exponent = GRAVITY / (LAPSE_RATE * GAS_CONST)
-
-            # Pressure calculation
-            if act['elev_high'] <= TROPOPAUSE_ALT:
-                P = ISA_SEA_LEVEL_PRESSURE_PA * (T_kelvin / sea_level_temp_K) ** exponent
-            else:
-                tropopause_temp_K = TROPOPAUSE_TEMP_C + 273.15
-                P_tropopause = ISA_SEA_LEVEL_PRESSURE_PA * (tropopause_temp_K / sea_level_temp_K) ** exponent
-                P = P_tropopause * math.exp(-GRAVITY * (act['elev_high'] - TROPOPAUSE_ALT) / (GAS_CONST * T_kelvin))
-
-            # Air density calculation
-            air_density = P / (GAS_CONST * T_kelvin)
-        else:
-            T = ISA_SEA_LEVEL_TEMP_C - LAPSE_RATE * act['elev_high'] if act['elev_high'] <= TROPOPAUSE_ALT else TROPOPAUSE_TEMP_C
-            T_kelvin = T + 273.15
-
-            # Precompute constants
-            sea_level_temp_K = ISA_SEA_LEVEL_TEMP_C + 273.15
-            exponent = GRAVITY / (LAPSE_RATE * GAS_CONST)
-
-            # Pressure calculation
-            if act['elev_high'] <= TROPOPAUSE_ALT:
-                # Assuming a standard lapse rate (temperature decrease with altitude)
-                lapse_rate = 0.0065  # K/m (approximate lapse rate in the troposphere)
-                estimated_T_kelvin = ISA_SEA_LEVEL_TEMP_K - (lapse_rate * act['elev_high'])
-                P = ISA_SEA_LEVEL_PRESSURE_PA * (estimated_T_kelvin / ISA_SEA_LEVEL_TEMP_K) ** EXPONENT
-            else:
-                # For altitudes above the tropopause, use tropopause values and an exponential decay
-                tropopause_temp_K = TROPOPAUSE_TEMP_C + 273.15
-                P_tropopause = ISA_SEA_LEVEL_PRESSURE_PA * (tropopause_temp_K / ISA_SEA_LEVEL_TEMP_K) ** EXPONENT
-                P = P_tropopause * math.exp(-GRAVITY * (act['elev_high'] - TROPOPAUSE_ALT) / (GAS_CONST * tropopause_temp_K)) # Use tropopause temp for this part of the calculation, assuming a constant temperature in the stratosphere
-
-            # Air density calculation
-            air_density = P / (GAS_CONST * T_kelvin)
-            return air_density
-    except Exception as e:
-        return e
-    
-def calculate_avg_watts(act, advanced_stats, basic_stats, velocity_mps, air_density, gravity):
-    cadence_sec = act['average_cadence'] / 60.0
-    watts = (1.036 * basic_stats['weight'] * velocity_mps) + (basic_stats['weight'] * gravity * advanced_stats['hosc'] * cadence_sec) + (0.5 * air_density * advanced_stats['afrontal'] * 1.4 * velocity_mps**3) + (basic_stats['weight'] * gravity * velocity_mps * act['total_elevation_gain'] / act['distance'])
-    return watts
-
-def calculate_gravity(act):
-    '''The following is using Newtons Law of Universal Gravitation'''
-    # Universal Gravitational Constant (m^3 kg^-1 s^-2)
-    G = 6.67430 * (10**-11) 
-    # Mass of Earth (kg)
-    M = 5.9722 * (10**24)
-    # Mean radius of Earth (m)
-    R = 6.371 * (10**6)
-    r = R + act['elev_high']  # Distance from Earth's center to the object
-    gravity = (G * M) / (r**2)
-    return gravity
-
-def get_user_fitness(activities, advanced_stats, basic_stats, banister_params=joblib.load('banister_params.pkl'), current_user=None): 
-    now = datetime.now(timezone.utc)
-    fitness_records: List[UserFitness] = []
-    
-    # Group activities by day
-    from collections import defaultdict
-    acts_by_day = defaultdict(list)
-    for activity in activities:
-        day = activity['start_date_local'][:10]
-        acts_by_day[day].append(activity)
-
-    sorted_days = sorted(acts_by_day.keys())
-    CTL = 0
-    ATL = 0
-    ctl_by_day = {}
-    atl_by_day = {}
-    daily_data = {}
-    re_list = []
-
-    for day in sorted_days:
-        re_today = 0
-        for act in acts_by_day[day]:
-            if not act.get('distance') or not act.get('elapsed_time') or not act.get('average_cadence'):
-                act['relative_effort'] = 0
-                continue
-
-            activity_timestamp = datetime.fromisoformat(act['start_date_local'].replace('Z', '+00:00'))
-            if activity_timestamp.tzinfo is None:
-                activity_timestamp = activity_timestamp.replace(tzinfo=timezone.utc)
-            else:
-                activity_timestamp = activity_timestamp.astimezone(timezone.utc)
-            day = activity_timestamp.date().isoformat()
-            velocity_mps = act['distance'] / act['elapsed_time']
-
-            air_density = calculate_air_density(act)
-            gravity = calculate_gravity(act)
-            
-            watts = calculate_avg_watts(act, advanced_stats, basic_stats, velocity_mps, air_density, gravity)
-            
-            act['watts'] = watts
-            act['relative_effort'] = calculate_tss(act, advanced_stats, basic_stats, watts)
-            re_today += act['relative_effort'] 
-            re_list.append(act['relative_effort'])
-        
-        CTL_arr, ATL_arr, _ = banister_recursive(banister_params, re_list)
-        CTL = CTL + (re_today - CTL) / Tfit
-        ATL = ATL + (re_today - ATL) / Tfat
-        ctl_by_day[day] = CTL
-        atl_by_day[day] = ATL
-        for act in acts_by_day[day]:
-            key = (day, act['id'])
-            daily_data[key] = {
-                'watts': watts,
-                'relative_effort': act['relative_effort'],
-                'ctl': CTL,
-                'atl': ATL,
-                'tsb': CTL - ATL
-            }
-
-    for i, ((day, activity_id), data) in enumerate(list(daily_data.items())[:len(CTL_arr)]):
-        ctl = CTL_arr[i]
-        atl = ATL_arr[i]
-        tsb = ctl - atl
-        norm_ctl = (ctl - CTLmin) / (CTLmax - CTLmin) * 100 if ctl > 0 else 0
-        norm_atl = (atl - ATLmin) / (ATLmax - ATLmin) * 100 if atl > 0 else 0
-
-        # Create a dataclass instance and append it to the list
-        fitness_records.append(
-            UserFitness(
-                id=activity_id,
-                user_id=current_user.id,
-                activity_id=activity_id,
-                day=day,
-                watts=data['watts'],
-                relative_effort=data['relative_effort'],
-                CTL=ctl,
-                ATL=atl,
-                norm_CTL=norm_ctl,
-                norm_ATL=norm_atl,
-                TSB=tsb,
-            )
-        )
-
-    return fitness_records
-
-def get_activity_fitness_changes(activity_id, activity_data, previous_data):
-    if not activity_data:
-        return None
-
-    activity_day, watts, relative_effort, ctl, atl, tsb = activity_data
-    # Find the previous day's fitness data
-    activity_date = datetime.strptime(activity_day, '%Y-%m-%d').date()
-    previous_date = activity_date.fromordinal(activity_date.toordinal() - 1)
-    previous_day_str = previous_date.isoformat()
-
-    prev_ctl, prev_atl, prev_tsb = (previous_data if previous_data and all(v is not None for v in previous_data) else (0.0, 0.0, 0.0)) # Added type hint for floats
-
-
-    # Create and return a dataclass instance
-    return ActivityFitnessChanges(
-        relative_effort=relative_effort,
-        ctl_change=ctl - prev_ctl,
-        atl_change=atl - prev_atl,
-        watts=watts,
-        tsb_change=tsb - prev_tsb
-    )
+def rtss(duration, ngp, intensity_factor, ftp): #duration must be seconds
+    tss = (duration * ngp * intensity_factor) / (ftp * 3600) * 100
+    return tss
