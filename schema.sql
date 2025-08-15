@@ -119,16 +119,6 @@ CREATE TABLE activity_streams (
     resolution VARCHAR(10) DEFAULT 'medium'
 );
 
--- Comments Table (though no endpoints, schema exists)
-CREATE TABLE comments (
-    id SERIAL PRIMARY KEY,
-    activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
-    athlete_id INTEGER REFERENCES athletes(id) ON DELETE CASCADE,
-    text TEXT NOT NULL,
-    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Athlete Zones Table
 CREATE TABLE athlete_zones (
     id SERIAL PRIMARY KEY,
