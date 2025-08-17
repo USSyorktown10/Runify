@@ -1,9 +1,9 @@
-import yaml  # Or use json if your spec is JSON
+import yaml
 from connexion.resolver import Resolver
 from importlib import import_module
 import os
 
-# Load your OpenAPI spec
+# Load OpenAPI spec
 with open('spec/openapi.yaml', 'r') as f:  # Replace with your spec file path
     spec = yaml.safe_load(f)
 

@@ -166,16 +166,18 @@ paths:
         - $ref: '#/components/parameters/AthleteId'
         - name: before
           in: query
-          description: Epoch timestamp (seconds) — return activities before this time.
+          description: ISO 8601 timestamp — return activities before this time.
           schema:
-            type: integer
-            example: 1723171200
+            type: string
+            format: date-time
+            example: "2025-08-09T00:00:00Z"
         - name: after
           in: query
-          description: Epoch timestamp (seconds) — return activities after this time.
+          description: ISO 8601 timestamp — return activities after this time.
           schema:
-            type: integer
-            example: 1722480000
+            type: string
+            format: date-time
+            example: "2025-08-01T00:00:00Z"
         - name: page
           in: query
           description: Page number for pagination.
@@ -215,16 +217,18 @@ paths:
       parameters:
         - name: before
           in: query
-          description: Epoch timestamp (seconds) — return activities before this time.
+          description: ISO 8601 timestamp — return activities before this time.
           schema:
-            type: integer
-            example: 1723171200
+            type: string
+            format: date-time
+            example: "2025-08-09T00:00:00Z"
         - name: after
           in: query
-          description: Epoch timestamp (seconds) — return activities after this time.
+          description: ISO 8601 timestamp — return activities after this time.
           schema:
-            type: integer
-            example: 1722480000
+            type: string
+            format: date-time
+            example: "2025-08-01T00:00:00Z"
         - name: page
           in: query
           description: Page number for pagination.
@@ -404,16 +408,18 @@ paths:
             example: month
         - name: before
           in: query
-          description: Epoch timestamp (seconds) — return metrics before this time. Used for custom ranges if timeframe is not specified.
+          description: ISO 8601 timestamp — return metrics before this time. Used for custom ranges if timeframe is not specified.
           schema:
-            type: integer
-            example: 1723171200
+            type: string
+            format: date-time
+            example: "2025-08-09T00:00:00Z"
         - name: after
           in: query
-          description: Epoch timestamp (seconds) — return metrics after this time. Used for custom ranges if timeframe is not specified.
+          description: ISO 8601 timestamp — return metrics after this time. Used for custom ranges if timeframe is not specified.
           schema:
-            type: integer
-            example: 1722480000
+            type: string
+            format: date-time
+            example: "2025-08-01T00:00:00Z"
       responses:
         "200":
           description: OK — AthleteMetrics object.
@@ -447,16 +453,18 @@ paths:
             example: month
         - name: before
           in: query
-          description: Epoch timestamp (seconds) — return metrics before this time. Used for custom ranges if timeframe is not specified.
+          description: ISO 8601 timestamp — return metrics before this time. Used for custom ranges if timeframe is not specified.
           schema:
-            type: integer
-            example: 1723171200
+            type: string
+            format: date-time
+            example: "2025-08-09T00:00:00Z"
         - name: after
           in: query
-          description: Epoch timestamp (seconds) — return metrics after this time. Used for custom ranges if timeframe is not specified.
+          description: ISO 8601 timestamp — return metrics after this time. Used for custom ranges if timeframe is not specified.
           schema:
-            type: integer
-            example: 1722480000
+            type: string
+            format: date-time
+            example: "2025-08-01T00:00:00Z"
       responses:
         "200":
           description: OK — AthleteMetrics object.
@@ -1512,6 +1520,94 @@ paths:
       tags:
         - auth
 
+  /moderation/reports:
+    get:
+      operationId: moderation.list_reports
+      summary: List pending reports
+      description: Returns a paginated list of pending reports for moderation.
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination.
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: page_size
+          in: query
+          description: Number of reports per page.
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+            minimum: 1
+            example: 10
+      responses:
+        "200":
+          description: OK — array of Report objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Report'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - moderation
+
+  /moderation/reports/{id}:
+    get:
+      operationId: moderation.get_report
+      summary: Get a specific report
+      description: Returns details of a specific report.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Report identifier
+          schema:
+            type: integer
+            example: 123
+      responses:
+        "200":
+          description: OK — Report object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - moderation
+
+  /moderation/reports/{id}/resolve:
+    post:
+      operationId: moderation.resolve_report
+      summary: Resolve a report
+      description: Resolves a report by taking an action (e.g., dismiss, delete, ban).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Report identifier
+          schema:
+            type: integer
+            example: 123
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveReportRequest'
+      responses:
+        "200":
+          description: Report resolved successfully.
+        default:
+          $ref: '#/components/responses/FaultResponse'
+      tags:
+        - moderation
+
 components:
   parameters:
     ActivityId:
@@ -2240,40 +2336,6 @@ components:
           example: false
           description: If the workout was manually added vs file
 
-    Comment:
-      type: object
-      required:
-        - id
-        - activity_id
-        - athlete
-        - text
-        - created
-      properties:
-        id:
-          type: integer
-          description: Comment ID.
-          example: 987
-        activity_id:
-          type: integer
-          description: Activity ID.
-          example: 12345
-        athlete:
-          $ref: '#/components/schemas/AthleteSummary'
-        text:
-          type: string
-          description: Comment text.
-          example: "Great run!"
-        created:
-          type: string
-          format: date-time
-          description: Creation time.
-          example: "2025-08-09T10:00:00Z"
-        updated:
-          type: string
-          format: date-time
-          description: Last update time.
-          example: "2025-08-09T11:00:00Z"
-
     Lap:
       type: object
       properties:
@@ -2396,6 +2458,10 @@ components:
           type: string
           description: Country.
           example: "USA"
+        mod:
+          type: boolean
+          description: is mod?
+          example: true
         sex:
           type: string
           enum:
@@ -2613,12 +2679,12 @@ components:
           type: string
           format: date-time
           description: when the Route was created
-          example: 2025-08-08T15:20:23Z
+          example: "2025-08-08T15:20:23Z"
         updated:
           type: string
           format: date-time
           description: Last update time.
-          example: 2025-08-08T16:20:23Z
+          example: "2025-08-08T16:20:23Z"
 
     Map:
       type: object
@@ -2634,7 +2700,7 @@ components:
         summary_polyline:
           type: string
           description: A downsampled version of polyline
-          example: ki{eFvqfiVsBmA`Feh@qg@iX`B}JeCcCqGjIq~@kf@cM{KeHeX`@_GdGkSeBiXtB}YuEkPwFyDeAzAe@pC~DfGc@bIOsGmCcEiD~@oBuEkFhBcBmDiEfAVuDiAuD}NnDaNiIlCyDD_CtJKv@wGhD]YyEzBo@g@uKxGmHpCGtEtI~AuLrHkAcAaIvEgH_EaDR_FpBuBg@sNxHqEtHgLoTpIiCzKNr[sB|Es\\`JyObYeMbGsMnPsAfDxAnD}DBu@bCx@{BbEEyAoD`AmChNoQzMoGhOwX|[yIzBeFKg[zAkIdU_LiHxK}HzEh@vM_BtBg@xGzDbCcF~GhArHaIfByAhLsDiJuC?_HbHd@nL_Cz@ZnEkDDy@hHwJLiCbIrNrIvN_EfAjDWlEnEiAfBxDlFkBfBtEfDaAzBvDKdFx@|@XgJmDsHhAgD`GfElEzOwBnYdBxXgGlSc@bGdHpW|HdJztBnhAgFxc@HnCvBdA
+          example: ki{eFvqfiVsBmA`Feh@qg@iX`B}JeCcCqGjIq~@kf@cM{MeHeX`@_GdGkSeBiXtB}YuEkPwFyDeAzAe@pC~DfGc@bIOsGmCcEiD~@oBuEkFhBcBmDiEfAVuDiAuD}NnDaNiIlCyDD_CtJKv@wGhD]YyEzBo@g@uKxGmHpCGtEtI~AuLrHkAcAaIvEgH_EaDR_FpBuBg@sNxHqEtHgLoTpIiCzKNr[sB|Es\\`JyObYeMbGsMnPsAfDxAnD}DBu@bCx@{BbEEyAoD`AmChNoQzMoGhOwX|[yIzBeFKg[zAkIdU_LiHxK}HzEh@vM_BtBg@xGzDbCcF~GhArHaIfByAhLsDiJuC?_HbHd@nL_Cz@ZnEkDDy@hHwJLiCbIrNrIvN_EfAjDWlEnEiAfBxDlFkBfBtEfDaAzBvDKdFx@|@XgJmDsHhAgD`GfElEzOwBnYdBxXgGlSc@bGdHpW|HdJztBnhAgFxc@HnCvBdA
 
     StreamSet:
       type: object
@@ -3055,6 +3121,58 @@ components:
           type: integer
           description: Time spent in this zone in seconds.
           example: 254
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123
+        reported_type:
+          type: string
+          enum:
+            - activity
+            - athlete
+            - route
+            - club
+          example: activity
+        reported_id:
+          type: integer
+          example: 12345
+        reporter:
+          $ref: '#/components/schemas/AthleteSummary'
+        reason:
+          type: string
+          example: "Inappropriate content"
+        description:
+          type: string
+          example: "Violates guidelines"
+        created:
+          type: string
+          format: date-time
+          example: "2025-08-17T12:00:00Z"
+        status:
+          type: string
+          enum:
+            - pending
+            - resolved
+            - dismissed
+          example: pending
+
+    ResolveReportRequest:
+      type: object
+      properties:
+        action:
+          type: string
+          enum:
+            - dismiss
+            - delete
+            - ban
+          example: dismiss
+        notes:
+          type: string
+          example: "No violation found"
+
   securitySchemes:
     sessionAuth:
       type: apiKey
@@ -3084,3 +3202,5 @@ tags:
     description: Authentication endpoints
   - name: reports
     description: Reporting endpoints
+  - name: moderation
+    description: Endpoints for looking at moderation
