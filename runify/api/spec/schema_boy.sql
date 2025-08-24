@@ -11,17 +11,17 @@ CREATE TYPE unit_preference AS ENUM ('imperial', 'metric');
 -- Athletes table
 CREATE TABLE athletes (
     id SERIAL PRIMARY KEY,
-    username TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,  -- Hashed password
-    email TEXT UNIQUE NOT NULL,
-    firstname TEXT NOT NULL,
-    lastname TEXT NOT NULL,
+    username VARCHAR(32) UNIQUE NOT NULL,
+    password_hash VARCHAR(128) NOT NULL,  -- Hashed password (SHA512)
+    email VARCHAR(64) UNIQUE NOT NULL,
+    firstname VARCHAR(32) NOT NULL,
+    lastname VARCHAR(32) NOT NULL,
     profile_image_url TEXT,
-    city TEXT,
-    state TEXT,
-    country TEXT,
-    sex TEXT CHECK (sex IN ('M', 'F', 'cardboard_box')),
-    bio TEXT,
+    city VARCHAR(32),
+    state VARCHAR(32),
+    country VARCHAR(32),
+    sex CHAR CHECK (sex IN ('M', 'F')),
+    bio VARCHAR(250),
     location TEXT,
     default_sport activity_type,
     height INTEGER,  -- cm
@@ -33,7 +33,7 @@ CREATE TABLE athletes (
 
 -- Gear table
 CREATE TABLE gear (
-    id TEXT PRIMARY KEY,  -- e.g., 'g123456'
+    id SERIAL PRIMARY KEY,
     athlete_id INTEGER REFERENCES athletes(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     description TEXT,
@@ -141,7 +141,7 @@ CREATE TABLE activity_zones (
 CREATE TABLE routes (
     id SERIAL PRIMARY KEY,
     athlete_id INTEGER REFERENCES athletes(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
+    name VARCHAR(64) NOT NULL,
     description TEXT,
     distance NUMERIC,
     elevation_gain NUMERIC,
@@ -152,13 +152,13 @@ CREATE TABLE routes (
 -- Clubs table
 CREATE TABLE clubs (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    name VARCHAR(64) NOT NULL,
     profile_medium TEXT,
     cover_photo TEXT,
     activities activity_type[],
-    city TEXT,
-    state TEXT,
-    country TEXT,
+    city VARCHAR(32),
+    state VARCHAR(32),
+    country VARCHAR(32),
     private BOOLEAN DEFAULT FALSE,
     url TEXT UNIQUE,
     tags TEXT[],
@@ -180,7 +180,7 @@ CREATE TABLE club_posts (
     id SERIAL PRIMARY KEY,
     club_id INTEGER REFERENCES clubs(id) ON DELETE CASCADE,
     athlete_id INTEGER REFERENCES athletes(id),
-    title TEXT NOT NULL,
+    title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     link TEXT,
     embed_image_url TEXT,
@@ -190,6 +190,7 @@ CREATE TABLE club_posts (
 );
 
 -- Follows (athlete follows)
+-- this is absolute trash for optimization but at this point i really could not care less
 CREATE TABLE follows (
     follower_id INTEGER REFERENCES athletes(id),
     followed_id INTEGER REFERENCES athletes(id),
