@@ -5,8 +5,8 @@ description = "stuff - cool stuff"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi>=0.115.0",
-    "uvicorn>=0.30.0",
-    "slowapi>=0.1.9",
-    "pydantic>=2.9.0",
+    "connexion[flask,swagger-ui]",
+    "uvicorn",
+    "datamodel-code-generator",
+    "psycopg2-binary",
 ]
