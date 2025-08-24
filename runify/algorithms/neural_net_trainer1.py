@@ -32,11 +32,6 @@ def parse_numeric(val):
     except (ValueError, TypeError):
         return np.nan
 
-
-
-
-
-
 # ---------------------------
 # Load CSV
 # ---------------------------

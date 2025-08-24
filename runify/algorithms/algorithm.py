@@ -245,11 +245,10 @@ def calculate_air_density(act):
 '''
 The following are neural net calculations and access functions that are also being tested and refined.
 '''
-# THE FOLLOWING IS OUTDATED, IN NEED OF UPDATE
 def banister_recursive(params, tss_list):
     k1, k2, PO, CTLC, ATLC = params
-    fitness = np.zeros(len(tss_list))
-    fatigue = np.zeros(len(tss_list))
+    fitness = np.zeros_like(tss_list)  # CTL
+    fatigue = np.zeros_like(tss_list)  # ATL
     for i in range(1, len(tss_list)):
         fitness[i] = fitness[i-1] + (tss_list[i] - fitness[i-1]) / CTLC
         fatigue[i] = fatigue[i-1] + (tss_list[i] - fatigue[i-1]) / ATLC
