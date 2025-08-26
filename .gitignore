@@ -4,3 +4,4 @@ activities.csv
 activities_with_TSS.csv
 banister_params.pkl
 runify/fitness_nn_model.pkl
+.DS_Store
