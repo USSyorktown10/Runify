@@ -5,3 +5,7 @@ activities_with_TSS.csv
 banister_params.pkl
 runify/fitness_nn_model.pkl
 .DS_Store
+runify/algorithms/routes/trails_db/streams/
+runify/algorithms/routes/act_fetch.py
+runify/algorithms/routes/activities.json
+runify/algorithms/routes/strava_tokens.db

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LCARS Trail Visualizer</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
+    <style>
+      #map { height: 90vh; width: 100vw; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+      var map = L.map('map').setView([35.87, -78.75], 12); // Raleigh/Umstead
+
+      // OSM tiles
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18
+      }).addTo(map);
+
+      // Show saved trails
+      fetch('/api/trails')
+        .then(res => res.json())
+        .then(trails => {
+          trails.forEach(trail => {
+                L.polyline(trail.latlng, {color: 'purple', weight: 2}).addTo(map);
+            });
+        });
+      // Optional: Overlay OSM trail/road data
+        fetch('/api/osm_trails')
+        .then(res => res.json())
+        .then(geojson => {
+          L.geoJSON(geojson, {style: {color: 'blue', weight: 2}}).addTo(map);
+        });
+    </script>
+</body>
+</html>

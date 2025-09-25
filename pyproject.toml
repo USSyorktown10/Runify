@@ -5,7 +5,6 @@ description = "stuff - cool stuff"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-<<<<<<< HEAD
     "fastapi>=0.115.0",
     "uvicorn>=0.30.0",
     "slowapi>=0.1.9",
@@ -15,10 +14,8 @@ dependencies = [
     "pandas>=2.3.1"
     "scikit-learn>=1.7.1"
     "scipy>=1.16.1"
-=======
     "connexion[flask,swagger-ui]",
     "uvicorn",
     "datamodel-code-generator",
     "psycopg2-binary",
->>>>>>> 2c4fd6523b84766776ed6f69cfe4dedec3cef906
 ]
