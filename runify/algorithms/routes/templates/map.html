@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>LCARS Trail Visualizer</title>
+    <title>Trail Visualizer</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
     <style>
@@ -23,15 +23,42 @@
         .then(res => res.json())
         .then(trails => {
           trails.forEach(trail => {
-                L.polyline(trail.latlng, {color: 'purple', weight: 2}).addTo(map);
+            // Optionally plot as purple polyline
+            L.polyline(trail.latlng.map(pt => [pt[0], pt[1]]), {color: 'purple', weight: 2}).addTo(map);
+
+            // Plot per-point: colored and popup all-in-one
+            trail.latlng.forEach(pt => {
+              let color = 'none';
+              if (pt.length > 2) {
+                const e = pt[2];
+                color = e < 60 ? 'blue'
+                    : e < 80 ? 'green'
+                    : e < 110 ? 'orange'
+                    : 'red';
+                console.log(pt)
+                console.log(`Elevation: ${e} m, Color: ${color}`);
+                elevText = `Elevation: ${e} m`;
+              }
+              console.log(`Plotting point: ${pt[0]}, ${pt[1]} with color ${color}`);
+              L.circleMarker([pt[0], pt[1]], {
+                radius: 3,
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.7
+              }).addTo(map)
+                .bindPopup(elevText);
             });
+          });
         });
+
+
       // Optional: Overlay OSM trail/road data
         fetch('/api/osm_trails')
         .then(res => res.json())
         .then(geojson => {
           L.geoJSON(geojson, {style: {color: 'blue', weight: 2}}).addTo(map);
         });
+      
     </script>
 </body>
 </html>

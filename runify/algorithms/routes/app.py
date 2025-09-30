@@ -13,16 +13,39 @@ def get_trails():
     directory = 'trails_db/way'  
 
     for fname in os.listdir(directory):
+        print(f"Processing file: {fname}")  # Debugging line
         if fname.endswith('.json'):
             with open(os.path.join(directory, fname)) as f:
                 j = json.load(f)
+                latlngs = j.get('latlng', {}).get('data', [])
+                elev = j.get('elevation_stats', {}).get('samples', []) 
+
+                latlng_elev = []
+                for i, pt in enumerate(latlngs):
+                    if i < len(elev) and elev[i] is not None:
+                        latlng_elev.append(pt + [elev[i]])
+                    else:
+                        latlng_elev.append(pt)
+
                 all_trails.append({
                     'trail_id': fname[:-5],                         
-                    'latlng': j.get('latlng', {}).get('data', []),  
+                    'latlng': latlng_elev,
                     'segments': j.get('segments', [])
                 })
     return jsonify(all_trails)
 
+'''
+@app.route('/api/average_trails')
+def get_average_trails():
+    directory = 'your_centerline_results'
+    all_centerlines = []
+    for fname in os.listdir(directory):
+        if fname.endswith('.geojson'):
+            with open(os.path.join(directory, fname)) as f:
+                gj = json.load(f)
+                all_centerlines.append(gj)
+    return jsonify(all_centerlines)
+'''
 
 # Optional: Load OSM GeoJSON
 @app.route('/api/osm_trails')
