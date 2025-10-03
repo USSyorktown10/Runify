@@ -62,8 +62,8 @@ def is_valid_handle(handle):
 def hash_password(password: str, salt: bytes = None) -> tuple[str, bytes]:
     if salt is None:
         salt = secrets.token_bytes(32)  # Generate a 32-byte random salt
-    # Combine password and salt, then hash with SHA-256
-    hashed = hashlib.sha256(password.encode('utf-8') + salt).hexdigest()
+    # Combine password and salt, then hash with SHA-512
+    hashed = hashlib.sha512(password.encode('utf-8') + salt).hexdigest()
     return hashed, salt
 
 # Check if a password is valid against the salt and hash
