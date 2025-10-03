@@ -9,3 +9,5 @@ runify/algorithms/routes/trails_db/streams/
 runify/algorithms/routes/act_fetch.py
 runify/algorithms/routes/activities.json
 runify/algorithms/routes/strava_tokens.db
+runify/algorithms/routes/trails_db/way/
+runify/algorithms/routes/automation.py

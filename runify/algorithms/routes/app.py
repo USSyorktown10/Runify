@@ -13,7 +13,6 @@ def get_trails():
     directory = 'trails_db/way'  
 
     for fname in os.listdir(directory):
-        print(f"Processing file: {fname}")  # Debugging line
         if fname.endswith('.json'):
             with open(os.path.join(directory, fname)) as f:
                 j = json.load(f)

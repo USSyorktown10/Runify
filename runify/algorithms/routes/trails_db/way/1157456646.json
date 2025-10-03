@@ -1,1 +1,1 @@
-{"latlng": {"data": [[35.764201510875246, -78.92187135231919]], "series_type": "distance", "original_size": 1, "resolution": "high"}, "elevation_stats": {"samples": [81.4], "mean": 81.4, "count": 1}}
+{"latlng": {"data": [[35.764201510875246, -78.92187135231919], [35.76420021540443, -78.92188793871964]], "series_type": "distance", "original_size": 2, "resolution": "high"}, "elevation_stats": {"samples": [81.4], "mean": 81.4, "count": 1}}
