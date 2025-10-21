@@ -11,3 +11,4 @@ runify/algorithms/routes/activities.json
 runify/algorithms/routes/strava_tokens.db
 runify/algorithms/routes/trails_db/way/
 runify/algorithms/routes/automation.py
+runify/algorithms/routes/__pycache__/

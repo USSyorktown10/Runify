@@ -1,3 +1,7 @@
+"""
+Load trails and display them
+"""
+
 from flask import Flask, render_template, jsonify
 import os, json
 
@@ -31,6 +35,7 @@ def get_trails():
                     'latlng': latlng_elev,
                     'segments': j.get('segments', [])
                 })
+    
     return jsonify(all_trails)
 
 '''

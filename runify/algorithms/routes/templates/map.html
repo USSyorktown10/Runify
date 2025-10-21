@@ -1,64 +1,136 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Trail Visualizer</title>
+    <title>Runify - Trail Visualizer</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
     <style>
       #map { height: 90vh; width: 100vw; }
+      .info.legend {
+        background: white;
+        line-height: 1.2;
+        color: #111;
+        padding: 8px 12px;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        font-size: 16px;
+        margin-bottom: 20px;
+      }
+      .legend-gradient {
+        display: inline-block;
+        height: 20px;
+        vertical-align: middle;
+        width: 140px;
+        background: linear-gradient(to right, hsl(240,100%,50%), hsl(0,100%,50%));
+        margin: 0 6px;
+        border-radius: 8px;
+      }
+      .leaflet-tooltip.custom-tooltip {
+        background: rgba(24,24,32,0.91);
+        color: #dadadf;
+        border-radius: 10px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.21);
+        padding: 7px 10px;
+        font-size: 15px;
+        border: 1.5px solid #444b87;
+      }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <script>
-      var map = L.map('map').setView([35.87, -78.75], 12); // Raleigh/Umstead
+    var map = L.map('map').setView([35.87, -78.75], 12); // Cary area
 
-      // OSM tiles
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18
-      }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18
+    }).addTo(map);
 
-      // Show saved trails
-      fetch('/api/trails')
-        .then(res => res.json())
-        .then(trails => {
-          trails.forEach(trail => {
-            // Optionally plot as purple polyline
-            L.polyline(trail.latlng.map(pt => [pt[0], pt[1]]), {color: 'purple', weight: 2}).addTo(map);
+    // ----- LEGEND CONTROL -----
+    var legend = L.control({position: 'bottomright'});
+    legend.onAdd = function (map) {
+        var div = L.DomUtil.create('div', 'info legend');
+        div.innerHTML =
+            "<b>Elevation</b><br>" +
+            "lower " +
+            "<span class='legend-gradient'></span>" +
+            "higher";
+        return div;
+    };
+    legend.addTo(map);
 
-            // Plot per-point: colored and popup all-in-one
-            trail.latlng.forEach(pt => {
-              let color = 'none';
-              if (pt.length > 2) {
-                const e = pt[2];
-                color = e < 60 ? 'blue'
-                    : e < 80 ? 'green'
-                    : e < 110 ? 'orange'
-                    : 'red';
-                console.log(pt)
-                console.log(`Elevation: ${e} m, Color: ${color}`);
-                elevText = `Elevation: ${e} m`;
-              }
-              console.log(`Plotting point: ${pt[0]}, ${pt[1]} with color ${color}`);
-              L.circleMarker([pt[0], pt[1]], {
-                radius: 3,
+    // ------ MAIN TRAIL DATA LOAD ------
+    fetch('/api/trails')
+      .then(res => res.json())
+      .then(trails => {
+        // Gather all elevations
+        let elevations = [];
+        trails.forEach(trail => {
+          trail.latlng.forEach(pt => {
+            if (pt.length > 2) elevations.push(pt[2]);
+          });
+        });
+        const minElev = Math.min(...elevations);
+        const maxElev = Math.max(...elevations);
+
+        // Map elevation to color (blue->red)
+        function elevToColor(e) {
+          let t = (e - minElev) / (maxElev - minElev);
+          let hue = 240 - 240 * t; // 240 (blue) to 0 (red)
+          return `hsl(${hue}, 100%, 50%)`;
+        }
+
+        // Track zoom dynamically for marker size scaling
+        function getRadius() {
+          // Scale radius: 6px @ zoom 16, 3px @ zoom 12, min 2px
+          let z = map.getZoom();
+          return Math.max(2, (z - 10) * 0.5); // tweak as desired
+        }
+
+        // To support dynamic resizing: store each marker in this array
+        const markers = [];
+
+        trails.forEach(trail => {
+          L.polyline(trail.latlng.map(pt => [pt[0], pt[1]]), { color: 'purple', weight: 2 }).addTo(map);
+
+          trail.latlng.forEach(pt => {
+            if (pt.length > 2) {
+              const e = pt[2];
+              let color = elevToColor(e);
+              let label = `Elevation: ${e.toFixed(1)} m<br>Lat: ${pt[0].toFixed(5)}<br>Lng: ${pt[1].toFixed(5)}`;
+              // Draw marker with initial size
+              let circle = L.circleMarker([pt[0], pt[1]], {
+                radius: getRadius(),
                 color: color,
                 fillColor: color,
-                fillOpacity: 0.7
-              }).addTo(map)
-                .bindPopup(elevText);
-            });
+                fillOpacity: 0.7,
+                weight: 1
+              }).addTo(map);
+              // Tooltip: show on hover, custom style, stays if clicked
+              circle.bindTooltip(label, {direction:'top', className:'custom-tooltip', sticky:true, permanent: false, opacity:1});
+              // Custom click/hover: lock tooltip on click, unlock on second click
+              let locked = false;
+              circle.on('mouseover', function(e) {
+                if (!locked) this.openTooltip();
+              });
+              circle.on('mouseout', function(e) {
+                if (!locked) this.closeTooltip();
+              });
+              circle.on('click', function(e) {
+                locked = !locked;
+                if (locked) this.openTooltip();
+                else this.closeTooltip();
+              });
+              markers.push(circle);
+            }
           });
         });
 
-
-      // Optional: Overlay OSM trail/road data
-        fetch('/api/osm_trails')
-        .then(res => res.json())
-        .then(geojson => {
-          L.geoJSON(geojson, {style: {color: 'blue', weight: 2}}).addTo(map);
+        // Update circle marker sizes on zoom
+        map.on('zoomend', () => {
+          const r = getRadius();
+          markers.forEach(circ => circ.setRadius(r));
         });
-      
+      });
     </script>
 </body>
 </html>
