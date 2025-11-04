@@ -808,23 +808,46 @@ def process_stream_file(file: str, trails_folder: str = 'trails_db', use_osm: bo
     print(f"[DEBUG] Saving RAW trail: {raw_trail_id}, points: {len(latlng_list_raw)}")
     save_trail_streams(raw_trail_id, streams_raw, folder=os.path.join(trails_folder, 'raw'), elevation_samples=elevation_samples_raw)
 
-    # Per-run centerline: resample the run into a regular spaced line (preferred over clustering into one point)
+    # Per-run averaged centerline: use the skeleton pipeline on the single run so elevations are averaged
     spacing_default = 5.0
+    # ensure we always have a resampled fallback centerline_points for later code paths
     centerline_points = resample_line_by_spacing([[p[0], p[1]] if len(p) >= 2 else p for p in gps_coords], spacing_m=spacing_default)
-    # centerline_points now is list of [lat,lng]
+    try:
+        # runs expects list of runs; pass single run to get averaged skeleton (no branching expected)
+        per_run_skeletons = _skeleton_no_branch([gps_coords], spacing_m=spacing_default, window_m=5.0)
+    except Exception:
+        per_run_skeletons = []
+
+    # _skeleton_no_branch returns list of [lat,lng(,elev)]
     centerline_trail_id = os.path.splitext(os.path.basename(file))[0] + "_centerline"
-    latlng_centerline = [[x[0], x[1]] for x in centerline_points]
-    elev_centerline = [p[2] for p in gps_coords]  # elevation not preserved per resampled point without projection
-    streams_centerline = {
-        "latlng": {
-            "data": latlng_centerline,
-            "series_type": "distance",
-            "original_size": len(latlng_centerline),
-            "resolution": "centerline"
+    if per_run_skeletons:
+        latlng_centerline = [[p[0], p[1]] for p in per_run_skeletons]
+        elev_centerline = [p[2] for p in per_run_skeletons if len(p) > 2]
+        streams_centerline = {
+            "latlng": {
+                "data": latlng_centerline,
+                "series_type": "distance",
+                "original_size": len(latlng_centerline),
+                "resolution": "centerline"
+            }
         }
-    }
-    print(f"[DEBUG] Saving per-run resampled centerline: {centerline_trail_id}, points: {len(latlng_centerline)}")
-    save_trail_streams(centerline_trail_id, streams_centerline, folder=os.path.join(trails_folder, 'way'), elevation_samples=elev_centerline)
+        print(f"[DEBUG] Saving per-run averaged centerline: {centerline_trail_id}, points: {len(latlng_centerline)}")
+        save_trail_streams(centerline_trail_id, streams_centerline, folder=os.path.join(trails_folder, 'way'), elevation_samples=elev_centerline)
+    else:
+        # fallback: plain resample without elevation
+        centerline_points = resample_line_by_spacing([[p[0], p[1]] if len(p) >= 2 else p for p in gps_coords], spacing_m=spacing_default)
+        latlng_centerline = [[x[0], x[1]] for x in centerline_points]
+        elev_centerline = [p[2] for p in gps_coords]
+        streams_centerline = {
+            "latlng": {
+                "data": latlng_centerline,
+                "series_type": "distance",
+                "original_size": len(latlng_centerline),
+                "resolution": "centerline"
+            }
+        }
+        print(f"[DEBUG] Saving per-run resampled centerline (fallback): {centerline_trail_id}, points: {len(latlng_centerline)}")
+        save_trail_streams(centerline_trail_id, streams_centerline, folder=os.path.join(trails_folder, 'way'), elevation_samples=elev_centerline)
 
     bbox_geojson = os.path.join(trails_folder, 'bbox_raw_saves', 'export.geojson')
     if not use_osm:

@@ -69,8 +69,10 @@
             if (pt.length > 2) elevations.push(pt[2]);
           });
         });
-        const minElev = Math.min(...elevations);
-        const maxElev = Math.max(...elevations);
+        const minElev = elevations.reduce((min, current) => Math.min(min, current), Infinity);
+      console.log("Min Elevation:", minElev);
+      const maxElev = elevations.reduce((max, current) => Math.max(max, current), -Infinity);
+      console.log("Max Elevation:", maxElev)
 
         // Map elevation to color (blue->red)
         function elevToColor(e) {
@@ -90,7 +92,7 @@
         const markers = [];
 
         trails.forEach(trail => {
-          L.polyline(trail.latlng.map(pt => [pt[0], pt[1]]), { color: 'purple', weight: 2 }).addTo(map);
+          //L.polyline(trail.latlng.map(pt => [pt[0], pt[1]]), { color: 'purple', weight: 2 }).addTo(map);
 
           trail.latlng.forEach(pt => {
             if (pt.length > 2) {
