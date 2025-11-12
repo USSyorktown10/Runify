@@ -4,6 +4,16 @@ from datetime import datetime, timezone
 import numpy as np
 from dataclasses import dataclass
 from typing import List
+import joblib as _joblib
+from typing import Dict, Any
+
+# local imports for model helpers
+try:
+    # package-style import
+    from .vo2_model import load_pipeline as _load_vo2_pipeline, predict_vo2_from_row as _predict_vo2_from_row
+except Exception:
+    # script-style import
+    from vo2_model import load_pipeline as _load_vo2_pipeline, predict_vo2_from_row as _predict_vo2_from_row
 
 '''
 The following are new formulas that being tested and refined.
@@ -153,6 +163,8 @@ if __name__ == "__main__":
     print(f"\nDuration: {total_duration/60:.1f} minutes")
     print(f"Threshold pace: {threshold_pace/60:.2f} min/km")
 
+# --- Fitness and VO2 Model Loaders and Predictors ---
+
 '''
 The following are older formulas that are still being tested and refined.
 '''
@@ -242,24 +254,6 @@ def calculate_air_density(act):
     return air_density
 
 '''
-# (VO2 = (0.2 × speed) + (0.9 × speed × grade) + 3.5)
-def calculate_vo2_max(act, advanced_stats, basic_stats):
-    # The following is using a version of the ACSM running equation
-    if act.get('average_hr') and act['average_hr'] and basic_stats.get('age') and basic_stats.get('weight'):
-        age = basic_stats['age']
-        weight_kg = basic_stats['weight']
-        max_hr = 220 - age
-        hr_ratio = act['average_hr'] / max_hr
-        velocity_mps = (act['distance'] / act['moving_time']) if act.get('distance') and act.get('moving_time') and act['moving_time'] > 0 else 0
-        velocity_kph = velocity_mps * 3.6
-        vo2 = (0.2 * velocity_mps) + (0.9 * velocity_kph * hr_ratio) + 3.5
-        vo2_max = vo2 * 1.11  # Adjusted for running economy
-        return vo2_max
-    else:
-        return None
-'''
-
-'''
 The following are neural net calculations and access functions that are also being tested and refined.
 '''
 def banister_recursive(params, tss_list):
@@ -271,3 +265,33 @@ def banister_recursive(params, tss_list):
         fatigue[i] = fatigue[i-1] + (tss_list[i] - fatigue[i-1]) / ATLC
     prediction = k1 * fitness + k2 * fatigue + PO
     return fitness, fatigue, prediction
+
+# --- End Fitness and VO2 Model Loaders and Predictors ---
+
+# --- Convenience loaders / thin wrappers so other modules can use these models via algorithm.py ---
+
+def load_fitness_nn(path: str = 'fitness_nn_model.pkl'):
+    """Load the trained fitness neural net (joblib). Returns estimator."""
+    return _joblib.load(path)
+
+
+def predict_fitness(estimator, features):
+    """Run the fitness NN estimator on features (array-like). Returns prediction(s)."""
+    return estimator.predict(features)
+
+
+def load_banister_params(path: str = 'banister_params.pkl'):
+    """Load previously saved banister params (numpy array)."""
+    return _joblib.load(path)
+
+
+def load_vo2_pipeline(pkl_path: str = 'vo2_pipeline.pkl') -> Dict[str, Any]:
+    """Load VO2 pipeline PKL and return pipeline dict (scaler, label_encoder, model)."""
+    return _load_vo2_pipeline(pkl_path)
+
+
+def predict_vo2(row: Dict[str, Any], pipeline: Dict[str, Any]) -> float:
+    """Convenience wrapper around vo2_model.predict_vo2_from_row."""
+    return _predict_vo2_from_row(row, pipeline)
+
+# --- End convenience section ---

@@ -18,7 +18,6 @@ def get_trails():
 
     for fname in os.listdir(directory):
         if fname.endswith('.json') and not fname.__contains__('raw'):
-            print(fname)
             with open(os.path.join(directory, fname)) as f:
                 j = json.load(f)
                 latlngs = j.get('latlng', {}).get('data', [])

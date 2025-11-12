@@ -38,7 +38,7 @@ def parse_numeric(val):
 data = pd.read_csv('algorithms/activities.csv')
 
 # ---------------------------
-# Step 1 - Calculate TRIMP-like Load
+# Step 1 - Calculate TRIMP-like Load (trimp more like shrimp)
 # ---------------------------
 def calculate_trimp(row, hr_rest=60, hr_max=190, gender_const=1.92):
     duration_min = parse_elapsed_time(row['Elapsed Time']) / 60
