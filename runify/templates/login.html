@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Log in — Runify{% endblock %}
+
+{% block content %}
+	<section style="padding:36px 0; display:grid; place-items:center;">
+		<div style="width:360px; background:var(--panel); border:1px solid var(--border); padding:20px; border-radius:12px;">
+			<h3 style="margin-top:0">Welcome back</h3>
+			<form action="/login" method="post">
+				<label class="hint">Email</label>
+				<input name="email" type="email" style="width:100%; padding:10px; margin:6px 0 12px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text)" />
+				<label class="hint">Password</label>
+				<input name="password" type="password" style="width:100%; padding:10px; margin:6px 0 12px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text)" />
+				<div style="display:flex; justify-content:space-between; align-items:center">
+					<button class="btn" type="submit">Log in</button>
+					<a href="/signup" class="hint">Create an account</a>
+				</div>
+			</form>
+		</div>
+	</section>
+{% endblock %}

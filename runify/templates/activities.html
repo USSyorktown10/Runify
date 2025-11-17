@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Activities — Runify{% endblock %}
+
+{% block content %}
+	<section style="padding:24px 0">
+		<h2>Activity Log</h2>
+		<p class="hint">A searchable list of your past activities.</p>
+		<div style="margin-top:16px">
+			{% if recent %}
+				{% for a in recent %}
+					<div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:8px; margin-bottom:10px; display:flex; justify-content:space-between;">
+						<div>
+							<strong>{{ a.name }}</strong>
+							<div class="hint">{{ a.distance }} mi • {{ a.pace }} /mi • {{ a.time }}</div>
+						</div>
+						<div class="hint">{{ a.date }}</div>
+					</div>
+				{% endfor %}
+			{% else %}
+				<div class="card">No activities yet — try uploading one.</div>
+			{% endif %}
+		</div>
+	</section>
+{% endblock %}

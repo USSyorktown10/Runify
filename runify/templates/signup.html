@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign up — Runify{% endblock %}
+
+{% block content %}
+	<section style="padding:36px 0; display:grid; place-items:center;">
+		<div style="width:420px; background:var(--panel); border:1px solid var(--border); padding:20px; border-radius:12px;">
+			<h3 style="margin-top:0">Create an account</h3>
+			<form action="/signup" method="post">
+				<label class="hint">Name</label>
+				<input name="name" type="text" style="width:100%; padding:10px; margin:6px 0 12px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text)" />
+				<label class="hint">Username</label>
+				<input name="name" type="text" style="width:100%; padding:10px; margin:6px 0 12px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text)" />
+				<label class="hint">Email</label>
+				<input name="email" type="email" style="width:100%; padding:10px; margin:6px 0 12px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text)" />
+				<label class="hint">Password</label>
+				<input name="password" type="password" style="width:100%; padding:10px; margin:6px 0 12px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text)" />
+				<div style="display:flex; justify-content:space-between; align-items:center">
+					<button class="btn" type="submit">Sign up</button>
+					<a href="/login" class="hint">Already have an account?</a>
+				</div>
+			</form>
+		</div>
+	</section>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload — Runify{% endblock %}
+
+{% block content %}
+	<section style="padding:24px 0">
+		<h2>Upload Activity</h2>
+		<p class="hint">Upload a .fit, .tcx, or .gpx file to add an activity.</p>
+		<div style="margin-top:12px;">
+			<form action="/upload" method="post" enctype="multipart/form-data" style="display:flex; gap:12px; align-items:center">
+				<input type="file" name="file" accept=".fit,.tcx,.gpx" />
+				<button class="btn" type="submit">Upload</button>
+			</form>
+		</div>
+	</section>
+{% endblock %}

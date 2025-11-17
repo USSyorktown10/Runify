@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Runify — Running Analytics{% endblock %}
+
+{% block content %}
+  <section style="padding:48px 0 24px;">
+    <div style="display:grid; grid-template-columns:1.1fr .9fr; gap:28px; align-items:start;">
+      <div>
+        <h1 style="font-size:clamp(30px,4.4vw,54px); margin:0 0 12px; font-weight:900;">Train smarter. Train harder.</h1>
+        <p style="color:var(--muted); margin-bottom:18px">Runify turns your GPX/TCX/FIT data into clear insights—irregularity detection, pace & HR trends, and route intelligence. Private by default.</p>
+        <div style="display:flex; gap:12px; margin-bottom:18px">
+          <a class="btn" href="#">Connect Garmin / Strava</a>
+          <a class="btn" style="background:transparent; border:1px solid var(--border); color:var(--text)" href="#">View Demo</a>
+        </div>
+
+        <div style="border:1px dashed var(--border); padding:16px; border-radius:12px; display:flex; align-items:center; gap:12px">
+          <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".fit,.tcx,.gpx" />
+            <button class="btn" type="submit">Upload a file</button>
+          </form>
+          <div class="hint">Drag & drop files or click upload</div>
+        </div>
+      </div>
+
+      <aside style="background:var(--panel); border:1px solid var(--border); padding:18px; border-radius:12px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div style="padding:12px; border:1px solid var(--border); border-radius:12px;">
+            <h4 style="margin:0 0 6px; color:var(--muted)">Last Run</h4>
+            <p style="margin:0; font-weight:900; font-size:20px">4.21 mi</p>
+            <div class="hint">Pace 8:12 /mi • HR 153</div>
+          </div>
+          <div style="padding:12px; border:1px solid var(--border); border-radius:12px;">
+            <h4 style="margin:0 0 6px; color:var(--muted)">VO₂ Trend</h4>
+            <p style="margin:0; font-weight:900; font-size:20px">+2.1%</p>
+            <div class="hint">14-day moving avg</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section">
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:18px;">
+      <div style="background:var(--panel); border:1px solid var(--border); padding:18px; border-radius:12px;">
+        <h3>Irregularity Finder</h3>
+        <p style="color:var(--muted)">Detects sudden shifts in HR, cadence, or pace.</p>
+      </div>
+      <div style="background:var(--panel); border:1px solid var(--border); padding:18px; border-radius:12px;">
+        <h3>Route Intelligence</h3>
+        <p style="color:var(--muted)">Compare efforts on recurring routes—normalized for conditions.</p>
+      </div>
+      <div style="background:var(--panel); border:1px solid var(--border); padding:18px; border-radius:12px;">
+        <h3>Private by Default</h3>
+        <p style="color:var(--muted)">Your data stays yours. Fine-grained controls for sharing.</p>
+      </div>
+    </div>
+  </section>
+{% endblock %}

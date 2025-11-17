@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Runify{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bg-favicon.png') }}">
+  <style>
+    :root{
+      --bg: #0b1220;
+      --panel:#0F1726;
+      --muted:#99A3B3;
+      --text:#E7ECF3;
+      --brand:#08D1C7;
+      --brand-2:#46E8C1;
+      --accent:#7B7FFE;
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+      --radius:16px;
+      --radius-sm:12px;
+      --radius-xs:10px;
+    }
+    [data-theme="light"]{
+      --bg:#f6f8fb;
+      --panel:#ffffff;
+      --muted:#475569;
+      --text:#0f172a;
+      --border: rgba(15,23,42,0.08);
+      --shadow: 0 12px 30px rgba(2,8,23,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: radial-gradient(1200px 600px at 10% -10%, rgba(70,232,193,.10), transparent 60%),
+                  radial-gradient(1200px 600px at 110% 10%, rgba(123,127,254,.08), transparent 60%), var(--bg);
+      color:var(--text); line-height:1.45;
+    }
+    a{color:inherit;text-decoration:none}
+    .container{width:min(1120px, 92vw); margin-inline:auto}
+
+    /* Navbar */
+    .nav{position:sticky; top:0; z-index:50; backdrop-filter: saturate(160%) blur(8px); background: linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,0)); border-bottom:1px solid var(--border);}
+    .nav-inner{display:flex; align-items:center; justify-content:space-between; padding:12px 8px}
+    .brand{display:flex; align-items:center; gap:12px; font-weight:800}
+    .brand-badge{width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background: linear-gradient(135deg, var(--brand), var(--brand-2));}
+    .nav-links{display:flex; gap:12px; align-items:center}
+    .pill{padding:8px 12px; border:1px solid var(--border); border-radius:999px; color:var(--muted)}
+    .pill-solid{background: linear-gradient(135deg, var(--brand), var(--brand-2)); color:#001015; padding:8px 12px; border-radius:999px; font-weight:700}
+    .btn{border:none; border-radius:12px; padding:8px 12px; font-weight:700; cursor:pointer; background: linear-gradient(135deg, var(--brand), var(--brand-2)); color:#001015;}
+
+    .section{padding:48px 0}
+    .footer{margin-top:30px; padding:30px 0 60px; color:var(--muted); border-top:1px solid var(--border)}
+
+    /* small helpers */
+    .hint{font-size:13px; color:var(--muted)}
+  </style>
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <div class="brand">
+        <span class="brand-badge" aria-hidden="true">
+          <img src="{{ url_for('static', filename='bg-favicon.png') }}" alt="Runify Logo" style="width:28px;height:28px;border-radius:6px;object-fit:cover;" />
+        </span>
+        <span>Runify</span>
+      </div>
+      <nav class="nav-links">
+        <a class="pill" href="/dashboard">Dashboard</a>
+        <a class="pill" href="/activities">Activities</a>
+        <a class="pill" href="/upload">Upload</a>
+        <a class="pill" href="/settings">Settings</a>
+        <a class="pill-solid" href="/signup">Sign Up</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="container footer">
+    <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+      <div>© <span id="y"></span> Runify. All rights reserved.</div>
+      <div class="hint">Made for runners. Built with love & science.</div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

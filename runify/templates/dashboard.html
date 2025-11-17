@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Runify Dashboard{% endblock %}
+
+{% block content %}
+    <section style="text-align:center; padding:32px 0">
+        <h2 style="margin:0 0 8px">Welcome back, {{ user.firstname }}.</h2>
+        <p class="hint">Your analytics and insights are ready.</p>
+    </section>
+
+    <div style="display:grid; grid-template-columns:1fr 1.5fr 1fr; gap:20px; padding:16px 0">
+        <section style="background:var(--panel); border:1px solid var(--border); padding:18px; border-radius:12px;">
+            <h3 style="color:#76eaff">Your Stats</h3>
+            <div style="display:flex; justify-content:space-between; margin:10px 0"><span>Weekly Mileage</span><strong>{{ weekly_mileage }} mi</strong></div>
+            <div style="display:flex; justify-content:space-between; margin:10px 0"><span>Last Run</span><strong>{{ last_distance }} mi @ {{ last_pace }}</strong></div>
+            <div style="display:flex; justify-content:space-between; margin:10px 0"><span>Avg HR This Week</span><strong>{{ avg_hr }}</strong></div>
+        </section>
+
+        <section style="background:var(--panel); border:1px solid var(--border); padding:18px; border-radius:12px;">
+            <h3 style="color:#76eaff">Recent Activities</h3>
+            <div>
+                {% for a in recent %}
+                    <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:8px; margin-bottom:10px; display:flex; justify-content:space-between;">
+                        <div>
+                            <strong>{{ a.name }}</strong>
+                            <div class="hint">{{ a.distance }} mi • {{ a.pace }} /mi • {{ a.time }}</div>
+                        </div>
+                        <div class="hint">{{ a.date }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div style="text-align:right; margin-top:8px"><a href="/activities" class="hint">View all →</a></div>
+        </section>
+
+        <section style="background:var(--panel); border:1px solid var(--border); padding:18px; border-radius:12px;">
+            <h3 style="color:#76eaff">Runify AI Insights</h3>
+            <p class="hint">{{ insight_message }}</p>
+            <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:10px; margin-top:12px">
+                <h4 style="margin:0 0 6px">Today's Recommendation</h4>
+                <p style="margin:0">{{ recommendation }}</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:10px; margin-top:12px">
+                <h4 style="margin:0 0 6px">Performance Trend</h4>
+                <p style="margin:0">{{ trend }}</p>
+            </div>
+        </section>
+    </div>
+{% endblock %}
