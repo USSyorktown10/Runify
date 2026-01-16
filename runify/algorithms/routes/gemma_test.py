@@ -47,6 +47,7 @@ if response.candidates[0].content.parts[0].function_call:
     function_call = response.candidates[0].content.parts[0].function_call
     print(f"Function to call: {function_call.name}")
     print(f"Arguments: {function_call.args}")
+    print(response)
     #  In a real app, you would call your function here:
     #  result = schedule_meeting(**function_call.args)
 else:

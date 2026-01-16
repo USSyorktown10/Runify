@@ -220,7 +220,8 @@ for lbl, items in groups.items():
             out_id = f"{base}_merged_skeleton"
             if len(merged_list) > 1:
                 out_id = f"{base}_merged_skeleton_branch{idx_sk}"
-            latlngs = [[p[0], p[1]] for p in merged]
+            # preserve elevation per point when present
+            latlngs = [([p[0], p[1], p[2]] if len(p) > 2 else [p[0], p[1]]) for p in merged]
             elevs = [p[2] for p in merged if len(p) > 2]
             streams = {"latlng": {"data": latlngs, "series_type": "distance", "original_size": len(latlngs), "resolution": "skeleton"}}
             # optional AI analysis/annotation
@@ -238,6 +239,15 @@ for lbl, items in groups.items():
             try:
                 if 'ai_decision' in locals() and ai_decision is not None:
                     streams['_ai_decision'] = ai_decision
+            except Exception:
+                pass
+
+            # attach raw AI text if gemini_client exposes LAST_RAW
+            try:
+                import gemini_client
+                raw = getattr(gemini_client, 'LAST_RAW', None)
+                if raw:
+                    streams['_ai_raw'] = raw
             except Exception:
                 pass
 

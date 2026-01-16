@@ -8,13 +8,30 @@ import os
 import json
 import urllib.request
 import urllib.error
+import time
+from collections import deque
 
 # Use the Google Generative Language quickstart endpoint by default.
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 GEMINI_ENDPOINT = os.environ.get(
     'GEMINI_ENDPOINT',
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent'
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
 )
+
+# Simple rate limiter: allow up to 14 requests per 60-second window to stay under 15/minute
+REQUEST_WINDOW_SECONDS = 60
+REQUEST_LIMIT = 14
+_recent_calls = deque()
+
+# Last raw response text from the most recent Gemini call (for audit)
+LAST_RAW = None
+
+# Simple token accounting: aim to stay under 250k tokens per 60s window.
+# We use a conservative chars->tokens heuristic: 4 chars per token (so tokens ~= chars/4).
+TOKEN_WINDOW_SECONDS = 60
+TOKEN_LIMIT = 250000
+_recent_token_usage = deque()  # tuples of (timestamp, token_count)
+_recent_token_total = 0
 
 
 def _extract_text_from_response(j):
@@ -56,6 +73,52 @@ def _call_gemini(prompt, timeout=10):
     """Call Gemini: prefer official SDK (google.genai) when available, else use HTTP quickstart.
     Returns generated text or None on failure.
     """
+    global LAST_RAW, _recent_token_total, _recent_token_usage
+
+    # rate limiting: ensure we don't exceed REQUEST_LIMIT per REQUEST_WINDOW_SECONDS
+    try:
+        now = time.monotonic()
+        # prune old timestamps
+        while _recent_calls and (now - _recent_calls[0]) > REQUEST_WINDOW_SECONDS:
+            _recent_calls.popleft()
+        if len(_recent_calls) >= REQUEST_LIMIT:
+            # need to wait until oldest timestamp is older than window
+            wait_for = REQUEST_WINDOW_SECONDS - (now - _recent_calls[0]) + 0.1
+            time.sleep(wait_for)
+        # record this call timestamp
+        _recent_calls.append(time.monotonic())
+    except Exception:
+        # if anything goes wrong, do not prevent the call
+        pass
+
+    # token accounting: approximate tokens for the prompt and throttle if needed
+    try:
+        now = time.monotonic()
+        # prune old token records
+        while _recent_token_usage and (now - _recent_token_usage[0][0]) > TOKEN_WINDOW_SECONDS:
+            ts, tk = _recent_token_usage.popleft()
+            _recent_token_total -= tk
+        # estimate prompt tokens conservatively
+        prompt_chars = len(prompt)
+        est_prompt_tokens = int(prompt_chars / 4) + 1
+        # if sending prompt would exceed TOKEN_LIMIT, wait until window frees
+        if _recent_token_total + est_prompt_tokens >= TOKEN_LIMIT:
+            # compute time to wait until enough tokens fall out of window
+            if _recent_token_usage:
+                oldest_ts = _recent_token_usage[0][0]
+                wait_for = TOKEN_WINDOW_SECONDS - (now - oldest_ts) + 0.1
+                time.sleep(wait_for)
+                # prune again after sleeping
+                now = time.monotonic()
+                while _recent_token_usage and (now - _recent_token_usage[0][0]) > TOKEN_WINDOW_SECONDS:
+                    ts, tk = _recent_token_usage.popleft()
+                    _recent_token_total -= tk
+        # record prompt tokens preemptively (they'll be included in the window)
+        _recent_token_usage.append((time.monotonic(), est_prompt_tokens))
+        _recent_token_total += est_prompt_tokens
+    except Exception:
+        pass
+
     # SDK path
     try:
         import google.genai as genai
@@ -63,11 +126,11 @@ def _call_gemini(prompt, timeout=10):
         client = genai.Client()
         # Use model gemini-2.0-flash-lite per user request
         try:
-            resp = client.models.generate_content(model="gemini-2.0-flash-lite", contents=prompt)
+            resp = client.models.generate_content(model="gemini-2.5-flash-lite", contents=prompt)
             print(resp)
         except Exception:
             # Some SDK builds expect contents wrapped; try list form
-            resp = client.models.generate_content(model="gemini-2.0-flash-lite", contents=[prompt])
+            resp = client.models.generate_content(model="gemini-2.5-flash-lite", contents=[prompt])
             print(resp)
         # Try to extract text from SDK response object
         try:
@@ -85,10 +148,28 @@ def _call_gemini(prompt, timeout=10):
                         if t:
                             texts.append(t)
                     if texts:
-                        return '\n'.join(texts)
+                                out_text = '\n'.join(texts)
+                                LAST_RAW = out_text
+                                # account for response tokens conservatively
+                                try:
+                                    resp_chars = len(out_text)
+                                    resp_tokens = int(resp_chars / 4) + 1
+                                    _recent_token_usage.append((time.monotonic(), resp_tokens))
+                                    _recent_token_total += resp_tokens
+                                except Exception:
+                                    pass
+                                return out_text
                 # fallback to candidate text
                 t = getattr(first, 'text', None) or (first.get('text') if isinstance(first, dict) else None)
                 if t:
+                    LAST_RAW = t
+                    try:
+                        resp_chars = len(t)
+                        resp_tokens = int(resp_chars / 4) + 1
+                        _recent_token_usage.append((time.monotonic(), resp_tokens))
+                        _recent_token_total += resp_tokens
+                    except Exception:
+                        pass
                     return t
         except Exception:
             pass
@@ -117,12 +198,38 @@ def _call_gemini(prompt, timeout=10):
             body = resp.read().decode('utf-8')
             try:
                 j = json.loads(body)
-                return _extract_text_from_response(j) or body
+                out = _extract_text_from_response(j) or body
+                LAST_RAW = out
+                try:
+                    resp_chars = len(out)
+                    resp_tokens = int(resp_chars / 4) + 1
+                    _recent_token_usage.append((time.monotonic(), resp_tokens))
+                    _recent_token_total += resp_tokens
+                except Exception:
+                    pass
+                return out
             except Exception:
+                LAST_RAW = body
+                try:
+                    resp_chars = len(body)
+                    resp_tokens = int(resp_chars / 4) + 1
+                    _recent_token_usage.append((time.monotonic(), resp_tokens))
+                    _recent_token_total += resp_tokens
+                except Exception:
+                    pass
                 return body
     except urllib.error.HTTPError as e:
         try:
-            return e.read().decode('utf-8')
+            body = e.read().decode('utf-8')
+            LAST_RAW = body
+            try:
+                resp_chars = len(body)
+                resp_tokens = int(resp_chars / 4) + 1
+                _recent_token_usage.append((time.monotonic(), resp_tokens))
+                _recent_token_total += resp_tokens
+            except Exception:
+                pass
+            return body
         except Exception:
             return None
     except Exception:

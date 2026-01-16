@@ -17,7 +17,7 @@ def get_trails():
     directory = 'trails_db/way'  
 
     for fname in os.listdir(directory):
-        if fname.endswith('.json') and not fname.__contains__('raw'):
+        if fname.endswith('centerline.json') and not fname.__contains__('raw'):
             with open(os.path.join(directory, fname)) as f:
                 j = json.load(f)
                 latlngs = j.get('latlng', {}).get('data', [])

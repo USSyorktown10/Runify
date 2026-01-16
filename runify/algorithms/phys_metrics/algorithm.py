@@ -2,172 +2,22 @@ import math
 import joblib
 from datetime import datetime, timezone
 import numpy as np
+import pandas as pd
 from dataclasses import dataclass
 from typing import List
 import joblib as _joblib
 from typing import Dict, Any
+from scipy.signal import lfilter
 
 # local imports for model helpers
 try:
     # package-style import
-    from .vo2_model import load_pipeline as _load_vo2_pipeline, predict_vo2_from_row as _predict_vo2_from_row
+    from .vo2_model import load_pipeline as _load_vo2_pipeline, predict_vo2_from_row as _predict_vo2_from_row, predict_vo2_refined as _predict_vo2_refined
 except Exception:
     # script-style import
-    from vo2_model import load_pipeline as _load_vo2_pipeline, predict_vo2_from_row as _predict_vo2_from_row
+    from vo2_model import load_pipeline as _load_vo2_pipeline, predict_vo2_from_row as _predict_vo2_from_row, predict_vo2_refined as _predict_vo2_refined
 
-'''
-The following are new formulas that being tested and refined.
-'''
-
-# --- The following are formulas for grade adjustment ---
-
-def minetti_grade_adjustment(grade_percent):
-    """
-    Minetti formula for metabolic cost adjustment based on grade
-    """
-    i = grade_percent / 100  # Convert percentage to decimal
-    cost_factor = 155.4 * (i**5) - 30.4 * (i**4) - 43.3 * (i**3) + 46.3 * (i**2) - 165 * i + 3.6
-    return cost_factor / 100  # Normalize to multiplier
-
-def strava_grade_adjustment(grade_percent):
-    """
-    Strava gets robbed
-    """
-    i = grade_percent / 100
-    relative_cost = 15.14 * (i**2) - 2.896 * i
-    return 1 + (relative_cost / 100)
-
-def simple_grade_adjustment(grade_percent):
-    """
-    Simple linear approximation: 10% grade = 30% harder
-    """
-    return 1 + (abs(grade_percent) * 0.03)
-
-# --- End Grade Adjustment Section ---
-
-# --- GAP Calculation ---
-
-def calculate_gap(pace_per_km, elevation_gain_m, distance_km):
-    """
-    pace_per_km: seconds per kilometer
-    elevation_gain_m: total elevation gain in meters
-    distance_km: distance in kilometers
-    """
-    if distance_km == 0:
-        return pace_per_km
-    
-    avg_grade_percent = (elevation_gain_m / (distance_km * 1000)) * 100
-    
-    # Use simple adjustment for now
-    adjustment_factor = simple_grade_adjustment(avg_grade_percent)
-    
-    # GAP is the equivalent flat pace
-    gap = pace_per_km / adjustment_factor
-    return gap
-
-def calculate_ngp(pace_data_per_km, elevation_data_m, distance_data_km):
-    if not pace_data_per_km or len(pace_data_per_km) == 0:
-        return 0
-    
-    # Calculate GAP for each segment
-    gap_values = []
-    for i in range(len(pace_data_per_km)):
-        pace = pace_data_per_km[i]
-        elevation = elevation_data_m[i] if i < len(elevation_data_m) else 0
-        distance = distance_data_km[i] if i < len(distance_data_km) else 1
-        
-        gap = calculate_gap(pace, elevation, distance)
-        gap_values.append(gap)
-    
-    # Convert pace to speed (km/h) for 4th power calculation
-    speeds = [3600 / gap for gap in gap_values if gap > 0]
-    
-    if not speeds:
-        return 0
-    
-    # 4th power weighting (like Normalized Power)
-    fourth_powers = [speed**4 for speed in speeds]
-    avg_fourth_power = sum(fourth_powers) / len(fourth_powers)
-    normalized_speed = avg_fourth_power ** 0.25
-    
-    # Convert back to pace (seconds per km)
-    ngp = 3600 / normalized_speed if normalized_speed > 0 else 0
-    return ngp
-
-# --- End GAP Calculation ---
-
-def calculate_intensity_factor(ngp_pace_per_km, threshold_pace_per_km):
-    if threshold_pace_per_km <= 0 or ngp_pace_per_km <= 0:
-        return 0
-    
-    # Convert to speeds for proper ratio
-    ngp_speed = 3600 / ngp_pace_per_km
-    threshold_speed = 3600 / threshold_pace_per_km
-    
-    intensity_factor = ngp_speed / threshold_speed
-    return intensity_factor
-
-# --- rTSS Calculations ---
-
-def calculate_rtss(duration_seconds, ngp_pace_per_km, threshold_pace_per_km):
-    if threshold_pace_per_km <= 0 or ngp_pace_per_km <= 0:
-        return 0
-    
-    intensity_factor = calculate_intensity_factor(ngp_pace_per_km, threshold_pace_per_km)
-    duration_hours = duration_seconds / 3600
-    
-    rtss = duration_hours * (intensity_factor ** 2) * 100
-    
-    return rtss
-
-def calculate_rtss_alternative(duration_seconds, ngp_pace_per_km, threshold_pace_per_km):
-    if threshold_pace_per_km <= 0 or ngp_pace_per_km <= 0:
-        return 0
-    
-    intensity_factor = calculate_intensity_factor(ngp_pace_per_km, threshold_pace_per_km)
-    
-    # (duration * ngp * intensity_factor) / (ftp * 3600) * 100
-    rtss = (duration_seconds * ngp_pace_per_km * intensity_factor) / (threshold_pace_per_km * 3600) * 100
-    
-    return rtss
-
-# --- End rTSS Calculations ---
-
-# Example usage and testing
-if __name__ == "__main__":
-    # Test data
-    pace_data = [300, 320, 310]  # seconds per km
-    elevation_data = [50, 100, 30]  # meters elevation gain per segment
-    distance_data = [1, 1, 1]  # km per segment
-    
-    total_duration = 930  # seconds (15.5 minutes)
-    threshold_pace = 240  # seconds per km (4:00/km threshold)
-    
-    print("=== Testing rTSS Calculations ===")
-    
-    # Calculate NGP
-    ngp = calculate_ngp(pace_data, elevation_data, distance_data)
-    print(f"NGP: {ngp:.1f} seconds/km ({ngp/60:.2f} min/km)")
-    
-    # Calculate IF
-    intensity_factor = calculate_intensity_factor(ngp, threshold_pace)
-    print(f"Intensity Factor: {intensity_factor:.3f}")
-    
-    # Calculate rTSS both ways
-    rtss1 = calculate_rtss(total_duration, ngp, threshold_pace)
-    rtss2 = calculate_rtss_alternative(total_duration, ngp, threshold_pace)
-    
-    print(f"rTSS (standard formula): {rtss1:.1f}")
-    print(f"rTSS (secondary formula): {rtss2:.1f}")
-    
-    print(f"\nDuration: {total_duration/60:.1f} minutes")
-    print(f"Threshold pace: {threshold_pace/60:.2f} min/km")
-
-# --- Fitness and VO2 Model Loaders and Predictors ---
-
-'''
-The following are older formulas that are still being tested and refined.
-'''
+# Pre-define stuff
 
 CTLmin = 0
 CTLmax = 150
@@ -187,11 +37,187 @@ MOLAR_MASS_AIR = 0.0289644  # kg/mol (Molar mass of dry air)
 lapse_rate = 0.0065  # K/m (approximate lapse rate in the troposphere)
 EXPONENT = (GRAVITY * MOLAR_MASS_AIR) / (GAS_CONST * lapse_rate) # Calculate EXPONENT based on the barometric formula for the troposphere
 
+'''
+The following are new formulas that being tested and refined.
+'''
+
+# --- The following are formulas for grade adjustment ---
+
+def parse_time_to_seconds(time_str):
+    """Parses 'HH:MM:SS' or 'MM:SS' into total seconds."""
+    if pd.isna(time_str) or str(time_str).strip() in ['--', '']:
+        return 0.0
+    try:
+        parts = str(time_str).split(':')
+        if len(parts) == 3: # HH:MM:SS
+            return int(parts[0])*3600 + int(parts[1])*60 + float(parts[2])
+        elif len(parts) == 2: # MM:SS
+            return int(parts[0])*60 + float(parts[1])
+        return float(time_str)
+    except:
+        return 0.0
+
+def minetti_grade_adjustment(grade_percent):
+    """
+    Minetti (2002) Energy Cost of Running.
+    Returns J/kg/m (Joules per kg per meter).
+    """
+    i = grade_percent / 100.0 
+    cost = 155.4*(i**5) - 30.4*(i**4) - 43.3*(i**3) + 46.3*(i**2) + 19.5*i + 3.6
+    
+    # Safety floor: Running downhill never becomes "free" energy generation
+    return max(cost, 1.0)
+
+def strava_grade_adjustment(grade_percent):
+    """
+    Strava gets robbed
+    """
+    i = grade_percent / 100
+    relative_cost = 15.14 * (i**2) - 2.896 * i
+    return 1 + (relative_cost / 100)
+
+def simple_grade_adjustment(grade_percent):
+    """
+    Simple linear approximation: 10% grade = 30% harder
+    """
+    return 1 + (abs(grade_percent) * 0.03)
+
+# --- End Grade Adjustment Section ---
+
+# --- GAP Calculation ---
+
+def calculate_gap(pace_per_km, grade_percent):
+    """
+    Refined GAP using Minetti ratio.
+    Accepts grade_percent directly (e.g., 5.0 for 5% slope).
+    """
+    if pace_per_km <= 0: return 0
+    
+    # Cost at current grade
+    cost_at_grade = minetti_grade_adjustment(grade_percent)
+    
+    # Cost at flat (0%)
+    cost_at_flat = minetti_grade_adjustment(0)
+    
+    # Ratio: How much harder is this than flat?
+    adjustment_factor = cost_at_grade / cost_at_flat
+    
+    # GAP = Actual Pace / Factor (Faster pace for harder work)
+    return pace_per_km / adjustment_factor
+
+
+def calculate_ngp(pace_input, grade_input):
+    """
+    Calculates Normalized Graded Pace (NGP).
+    SMART LOGIC: Detects if input is a Stream (List) or Summary (Float).
+    """
+    # CASE 1: Summary Data (Float/Int) - Used by your CSV Trainer
+    # If the input is just a number (e.g., 300 seconds), treat it as a summary
+    if isinstance(pace_input, (int, float, np.number)) and isinstance(grade_input, (int, float, np.number)):
+        return calculate_gap(pace_input, grade_input)
+
+    # CASE 2: Stream Data (List/Array) - Used if you parse FIT files later
+    if not pace_input: return 0
+    
+    gap_values = []
+    # Use zip for safety if lists are different lengths
+    length = min(len(pace_input), len(grade_input))
+    
+    for i in range(length):
+        p = pace_input[i]
+        g = grade_input[i]
+        gap_values.append(calculate_gap(p, g))
+        
+    # Weighting Logic (Fourth Power of Speed)
+    speeds_mps = [1000/gap for gap in gap_values if gap > 0]
+    
+    if not speeds_mps: return 0
+    
+    sum_fourth = sum([s**4 for s in speeds_mps])
+    avg_fourth = sum_fourth / len(speeds_mps)
+    normalized_speed = avg_fourth ** 0.25
+    
+    if normalized_speed > 0:
+        return 1000 / normalized_speed
+    return 0
+
+# --- End GAP Calculation ---
+
+def calculate_intensity_factor(ngp_pace_per_km, threshold_pace_per_km):
+    if threshold_pace_per_km <= 0 or ngp_pace_per_km <= 0:
+        return 0
+    
+    # Convert to speeds for proper ratio
+    ngp_speed = 3600 / ngp_pace_per_km
+    threshold_speed = 3600 / threshold_pace_per_km
+    
+    intensity_factor = ngp_speed / threshold_speed
+    return intensity_factor
+
+# --- rTSS Calculations ---
+
+def calculate_rtss(ngp_pace, duration_seconds, threshold_pace):
+    """
+    Calculates rTSS using NGP.
+    """
+    if ngp_pace <= 0 or threshold_pace <= 0: return 0
+    
+    # Intensity Factor (Inverse because Pace)
+    # Threshold 4:00 (240s), NGP 3:00 (180s) -> 240/180 = 1.33 IF
+    IF = threshold_pace / ngp_pace
+    
+    duration_hours = duration_seconds / 3600
+    
+    # rTSS Formula
+    return duration_hours * (IF ** 2) * 100
+
+def calculate_rtss_alternative(duration_seconds, ngp_pace_per_km, threshold_pace_per_km):
+    """
+    Alternative rTSS calculation using NGP.
+    """
+    if threshold_pace_per_km <= 0 or ngp_pace_per_km <= 0:
+        return 0
+    
+    intensity_factor = calculate_intensity_factor(ngp_pace_per_km, threshold_pace_per_km)
+    
+    # (duration * ngp * intensity_factor) / (ftp * 3600) * 100
+    rtss = (duration_seconds * ngp_pace_per_km * intensity_factor) / (threshold_pace_per_km * 3600) * 100
+    
+    return rtss
+
+# --- End rTSS Calculations ---
+
+# --- Fitness and VO2 Model Loaders and Predictors ---
 
 def calculate_avg_watts(act, advanced_stats, basic_stats, velocity_mps, air_density, gravity):
     cadence_sec = act['average_cadence'] / 60.0 # Makes cadence by seconds
     watts = (1.036 * basic_stats['weight'] * velocity_mps) + (basic_stats['weight'] * gravity * advanced_stats['hosc'] * cadence_sec) + (0.5 * air_density * advanced_stats['afrontal'] * 1.4 * velocity_mps**3) + (basic_stats['weight'] * gravity * velocity_mps * act['total_elevation_gain'] / act['distance'])
     return watts
+
+def calculate_minetti_watts(speed_mps, grade_percent, body_mass_kg):
+    """Calculates Metabolic Power (Watts) using Minetti (2002)."""
+    i = grade_percent / 100.0
+    # Minetti Energy Cost (J/kg/m)
+    cost_j_kg_m = 155.4*(i**5) - 30.4*(i**4) - 43.3*(i**3) + 46.3*(i**2) + 19.5*i + 3.6
+    cost_j_kg_m = max(cost_j_kg_m, 2.0) # Floor to prevent negatives
+    
+    # Power (W) = Cost (J/kg/m) * Speed (m/s) * Mass (kg)
+    return cost_j_kg_m * speed_mps * body_mass_kg
+
+def calculate_tss(watts, ftp, duration_seconds):
+    """Calculates Training Stress Score (TSS) from Power."""
+    if ftp <= 0 or watts <= 0:
+        return 0.0
+    # Normalized Power approximation (simplified)
+    # Intensity Factor
+    adjusted_watts = watts
+    if watts > 600 and ftp < 400:
+        adjusted_watts = watts * 0.25
+        
+    IF = adjusted_watts / ftp
+    
+    # TSS = (sec * watts * IF) / (ftp * 3600) * 100
+    return (duration_seconds * adjusted_watts * IF) / (ftp * 3600) * 100
 
 def calculate_gravity(act):
     '''The following is using Newtons Law of Universal Gravitation'''
@@ -205,66 +231,103 @@ def calculate_gravity(act):
     gravity = (G * M) / (r**2)
     return gravity
 
-def calculate_air_density(act):
-    '''The following is using International Standard Atmosphere (ISA) model as a basis'''        
-    # Temperature calculation
-    if act.get('average_temp'):
-        if act['average_temp'] is None:
-            T = ISA_SEA_LEVEL_TEMP_C - LAPSE_RATE * act['elev_high'] if act['elev_high'] <= TROPOPAUSE_ALT else TROPOPAUSE_TEMP_C
-        else:
-            T = act['average_temp']
-        T_kelvin = T + 273.15
+def calculate_air_density(act: Dict[str, Any]) -> float:
+    """
+    Calculates Air Density using the International Standard Atmosphere (ISA) model.
+    Separates 'Standard Temperature' (for pressure) from 'Actual Temperature' (for density).
+    """
+    elev = act.get('elev_high', 0)
 
-        # Precompute constants
-        sea_level_temp_K = ISA_SEA_LEVEL_TEMP_C + 273.15
-        exponent = GRAVITY / (LAPSE_RATE * GAS_CONST)
-
-        # Pressure calculation
-        if act['elev_high'] <= TROPOPAUSE_ALT:
-            P = ISA_SEA_LEVEL_PRESSURE_PA * (T_kelvin / sea_level_temp_K) ** exponent
-        else:
-            tropopause_temp_K = TROPOPAUSE_TEMP_C + 273.15
-            P_tropopause = ISA_SEA_LEVEL_PRESSURE_PA * (tropopause_temp_K / sea_level_temp_K) ** exponent
-            P = P_tropopause * math.exp(-GRAVITY * (act['elev_high'] - TROPOPAUSE_ALT) / (GAS_CONST * T_kelvin))
-
-        # Air density calculation
-        air_density = P / (GAS_CONST * T_kelvin)
+    # Calculate STANDARD Temperature at this altitude (Required for Pressure)
+    if elev > TROPOPAUSE_ALT:
+        # Stratosphere (simplified constant temp)
+        std_temp_at_alt = ISA_SEA_LEVEL_TEMP_K - (LAPSE_RATE * TROPOPAUSE_ALT)
     else:
-        T = ISA_SEA_LEVEL_TEMP_C - LAPSE_RATE * act['elev_high'] if act['elev_high'] <= TROPOPAUSE_ALT else TROPOPAUSE_TEMP_C
-        T_kelvin = T + 273.15
+        std_temp_at_alt = ISA_SEA_LEVEL_TEMP_K - (LAPSE_RATE * elev)
+    
+    # Calculate Pressure using STANDARD Temperature
+    # (Do not use actual temp here, or pressure will be wrong)
+    if elev <= TROPOPAUSE_ALT:
+        pressure = ISA_SEA_LEVEL_PRESSURE_PA * (std_temp_at_alt / ISA_SEA_LEVEL_TEMP_K) ** EXPONENT
+    else:
+        # Stratosphere fallback
+        p_tropo = ISA_SEA_LEVEL_PRESSURE_PA * ( (ISA_SEA_LEVEL_TEMP_K - (LAPSE_RATE * TROPOPAUSE_ALT)) / ISA_SEA_LEVEL_TEMP_K) ** EXPONENT
+        pressure = p_tropo * math.exp(-GRAVITY * (elev - TROPOPAUSE_ALT) / (GAS_CONST * std_temp_at_alt))
 
-        # Precompute constants
-        sea_level_temp_K = ISA_SEA_LEVEL_TEMP_C + 273.15
-        exponent = GRAVITY / (LAPSE_RATE * GAS_CONST)
+    # Use sensor data if available, otherwise fallback to standard
+    if act.get('average_temp') is not None:
+        actual_temp_k = act['average_temp'] + 273.15
+    else:
+        actual_temp_k = std_temp_at_alt
+        
+    # Density depends on the ACTUAL temperature of the gas
+    return pressure / (GAS_CONST * actual_temp_k)
 
-        # Pressure calculation
-        if act['elev_high'] <= TROPOPAUSE_ALT:
-            # Assuming a standard lapse rate (temperature decrease with altitude)
-            lapse_rate = 0.0065  # K/m (approximate lapse rate in the troposphere)
-            estimated_T_kelvin = ISA_SEA_LEVEL_TEMP_K - (lapse_rate * act['elev_high'])
-            P = ISA_SEA_LEVEL_PRESSURE_PA * (estimated_T_kelvin / ISA_SEA_LEVEL_TEMP_K) ** EXPONENT
-        else:
-            # For altitudes above the tropopause, use tropopause values and an exponential decay
-            tropopause_temp_K = TROPOPAUSE_TEMP_C + 273.15
-            P_tropopause = ISA_SEA_LEVEL_PRESSURE_PA * (tropopause_temp_K / ISA_SEA_LEVEL_TEMP_K) ** EXPONENT
-            P = P_tropopause * math.exp(-GRAVITY * (act['elev_high'] - TROPOPAUSE_ALT) / (GAS_CONST * tropopause_temp_K)) # Use tropopause temp for this part of the calculation, assuming a constant temperature in the stratosphere
-
-        # Air density calculation
-        air_density = P / (GAS_CONST * T_kelvin)
-    return air_density
+def estimate_vdot(distance_meters, time_seconds):
+    """
+    Estimates VDOT (Effective VO2Max) from run performance.
+    Essential for generating training labels for the Neural Net.
+    """
+    if time_seconds <= 120 or distance_meters <= 0: # Filter short/bad data
+        return np.nan
+    
+    # Velocity in meters/min
+    v_min = distance_meters / (time_seconds / 60.0)
+    
+    # Oxygen Cost (ACSM / Jack Daniels approximation)
+    vo2_cost = 0.182258 * v_min + 0.000104 * (v_min**2) - 4.60
+    
+    # Percent of VO2Max Sustainable for this duration
+    time_min = time_seconds / 60.0
+    # Regression of world record drops
+    percent_max = 0.8 + 0.1894393 * math.exp(-0.012778 * time_min) + 0.2989558 * math.exp(-0.1932605 * time_min)
+    
+    # VDOT
+    return vo2_cost / percent_max
 
 '''
-The following are neural net calculations and access functions that are also being tested and refined.
+NN Functions start here
 '''
-def banister_recursive(params, tss_list):
-    k1, k2, PO, CTLC, ATLC = params
-    fitness = np.zeros_like(tss_list)  # CTL
-    fatigue = np.zeros_like(tss_list)  # ATL
-    for i in range(1, len(tss_list)):
-        fitness[i] = fitness[i-1] + (tss_list[i] - fitness[i-1]) / CTLC
-        fatigue[i] = fatigue[i-1] + (tss_list[i] - fatigue[i-1]) / ATLC
-    prediction = k1 * fitness + k2 * fatigue + PO
+
+def banister_recursive(params, load_history):
+    """
+    Optimized Banister Model.
+    Returns: (fitness, fatigue, prediction)
+    """
+    k1, k2, p0, tau1, tau2 = params
+    
+    # Pre-calculate exponential decay factors
+    tau1 = max(tau1, 1.0)
+    tau2 = max(tau2, 1.0)
+    
+    d1 = np.exp(-1.0 / tau1)
+    d2 = np.exp(-1.0 / tau2)
+    
+    # y[n] = x[n] + d * y[n-1]
+    fitness = lfilter([1], [1, -d1], load_history)
+    fatigue = lfilter([1], [1, -d2], load_history)
+    
+    # Performance = Baseline + Fitness_Gain - Fatigue_Decay
+    prediction = p0 + (k1 * fitness) - (k2 * fatigue)
+    
     return fitness, fatigue, prediction
+
+def save_model(obj, filename):
+    joblib.dump(obj, filename)
+
+def load_model(filename):
+    return joblib.load(filename)
+
+def predict_performance_hybrid(load_history, recent_features, banister_params, nn_model):
+    """
+    Combines Banister Physics + NN Correction.
+    """
+    _, _, banister_preds = banister_recursive(banister_params, load_history)
+    base_performance = banister_preds[-1] # Today's theoretical speed
+
+    correction = nn_model.predict(np.array(recent_features).reshape(1, -1))[0]
+    
+    return base_performance + correction
 
 # --- End Fitness and VO2 Model Loaders and Predictors ---
 
@@ -290,8 +353,8 @@ def load_vo2_pipeline(pkl_path: str = 'vo2_pipeline.pkl') -> Dict[str, Any]:
     return _load_vo2_pipeline(pkl_path)
 
 
-def predict_vo2(row: Dict[str, Any], pipeline: Dict[str, Any]) -> float:
+def predict_vo2(row: Dict[str, Any], pipeline: Dict[str, Any], streams: Dict[str, list] = None) -> float:
     """Convenience wrapper around vo2_model.predict_vo2_from_row."""
-    return _predict_vo2_from_row(row, pipeline)
+    return _predict_vo2_refined(row, pipeline, streams)
 
 # --- End convenience section ---

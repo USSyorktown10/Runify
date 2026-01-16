@@ -1,164 +1,145 @@
-import numpy as np
 import pandas as pd
-from scipy import optimize
+import numpy as np
+from scipy.optimize import minimize
 from sklearn.neural_network import MLPRegressor
-import joblib
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+import algorithm as alg
 
-# ---------------------------
-# Load and parse helpers
-# ---------------------------
-def parse_elapsed_time(s):
-    if isinstance(s, (int, float)):
-        return float(s)
-    parts = str(s).split(':')
-    if len(parts) == 3:
-        h, m, sec = parts
-        return int(h) * 3600 + int(m) * 60 + float(sec)
-    elif len(parts) == 2:
-        m, sec = parts
-        return int(m) * 60 + float(sec)
-    try:
-        return float(s)
-    except Exception:
-        return 0
+# Personalize to yourself. These are basic configurations
+CSV_PATH = 'activities.csv'
+USER_FTP = 350
+USER_MASS = 61
+THRESHOLD_PACE = 201
+MIN_HR_FOR_TRAINING = 145
 
-def parse_numeric(val):
-    """Convert to float if possible, NaN if not."""
-    try:
-        s = str(val).strip()
-        if s in ["", "--", "nan", "NaN", "None"]:
-            return np.nan
-        return float(s.replace(",", ""))  # remove commas if present
-    except (ValueError, TypeError):
-        return np.nan
+def train_fitness_model():
+    df = pd.read_csv(CSV_PATH)
+    
+    # Sort chronologically
+    if 'Date' in df.columns:
+        df['Date'] = pd.to_datetime(df['Date'])
+        df = df.sort_values('Date', ascending=True).reset_index(drop=True)
 
-# ---------------------------
-# Load CSV
-# ---------------------------
-data = pd.read_csv('algorithms/activities.csv')
+    # Clean Numeric Columns
+    print("Cleaning data...")
+    cols_to_clean = ['Distance', 'Total Ascent', 'Avg Run Cadence', 'Training Stress Score®', 'Avg HR']
+    for c in cols_to_clean:
+        if c in df.columns:
+            df[c] = df[c].astype(str).str.replace(',', '').replace('--', '0')
+            df[c] = pd.to_numeric(df[c], errors='coerce').fillna(0)
+    
+    # Parse Time
+    df['Seconds'] = df['Elapsed Time'].apply(alg.parse_time_to_seconds)
 
-# ---------------------------
-# Step 1 - Calculate TRIMP-like Load (trimp more like shrimp)
-# ---------------------------
-def calculate_trimp(row, hr_rest=60, hr_max=190, gender_const=1.92):
-    duration_min = parse_elapsed_time(row['Elapsed Time']) / 60
-    if np.isnan(row['Avg HR']) or row['Avg HR'] == 0:
-        return np.nan
-    hr_ratio = (row['Avg HR'] - hr_rest) / (hr_max - hr_rest)
-    return duration_min * hr_ratio * gender_const
+    # Calculate rTSS (better than tss)
+    print(f"Calculating rTSS using Threshold Pace: {THRESHOLD_PACE}s/km...")
+    
+    # If its too long, its prolly meters ngl
+    df['Dist_Meters'] = df['Distance'].apply(lambda x: x if x > 100 else x * 1609.34)
+    
+    # Speed & Grade
+    df['Speed_mps'] = df.apply(lambda x: x['Dist_Meters'] / x['Seconds'] if x['Seconds'] > 0 else 0, axis=1)
+    df['Grade_Pct'] = df.apply(lambda x: (x['Total Ascent'] / x['Dist_Meters'] * 100) if x['Dist_Meters'] > 0 else 0, axis=1)
 
-data['Load'] = data.apply(calculate_trimp, axis=1)
-
-# Fill missing Load values with pace-based estimate
-def calculate_pace_load(row):
-    duration_hr = parse_elapsed_time(row['Elapsed Time']) / 3600
-    if duration_hr == 0:
-        return np.nan
-    distance_km = (row['Distance'])  # assuming already in km
-    if "," in distance_km:
-        distance_km = float(distance_km.replace(",", ""))
-        distance_km = distance_km / 1000  # convert to km if in meters
-    else:
-        distance_km = float(distance_km) * 1.60934 # convert miles to km
-    intensity_factor = (distance_km / duration_hr) / 10  # normalize by 10 km/h
-    return distance_km * intensity_factor
-
-data['Load'] = data['Load'].fillna(data.apply(calculate_pace_load, axis=1))
-data['Load'] = data['Load'].fillna(0)
-
-# ---------------------------
-# Step 2 - Target variable: Normalized Speed (m/s)
-# ---------------------------
-def calculate_speed(row):
-    # Get distance as float (meters)
-    try:
-        dist_str = str(row['Distance']).replace(",", "").strip()
-        distance_val = float(dist_str)
-    except (ValueError, TypeError):
-        return np.nan  # skip if completely invalid
-
-    if distance_val < 100:  # very likely miles
-        distance_m = distance_val * 1609.34
-    else:  # already in meters
-        distance_m = distance_val
-
-    # Parse elapsed time (seconds)
-    elapsed_sec = parse_elapsed_time(row['Elapsed Time'])
-    if elapsed_sec <= 0:
-        return np.nan
-
-    # Speed in m/s
-    return distance_m / elapsed_sec
-
-# Fill Speed_mps where missing
-data['Speed_mps'] = data.get('Speed_mps', np.nan)  # ensure column exists
-data['Speed_mps'] = data['Speed_mps'].fillna(data.apply(calculate_speed, axis=1))
-data['Speed_mps'] = data['Speed_mps'].fillna(0)
-
-Actual_Performance = data['Speed_mps'].values
-
-
-# ---------------------------
-# Step 3 - Banister model using new Load
-# ---------------------------
-TSS = data['Load'].values
-
-def banister_recursive(params, TSS):
-    k1, k2, PO, CTLC, ATLC = params
-    fitness = np.zeros_like(TSS)
-    fatigue = np.zeros_like(TSS)
-    for i in range(1, len(TSS)):
-        fitness[i] = fitness[i-1] + (TSS[i] - fitness[i-1]) / CTLC
-        fatigue[i] = fatigue[i-1] + (TSS[i] - fatigue[i-1]) / ATLC
-    prediction = k1 * fitness + k2 * fatigue + PO
-    return prediction
-
-def banister_loss(params):
-    prediction = banister_recursive(params, TSS)
-    return np.mean(np.abs(Actual_Performance - prediction))
-
-initial_guess = [0.1, 0.5, np.mean(Actual_Performance), 45, 15] # type: ignore
-result = optimize.minimize(banister_loss, initial_guess)
-banister_params = result.x
-print("Banister Model Params:", banister_params)
-
-# Save params
-joblib.dump(banister_params, 'banister_params.pkl')
-
-# ---------------------------
-# Step 4 - Neural net with multiple inputs
-# ---------------------------
-# Also clean any other key numeric columns used in features
-numeric_cols = ['Distance', 'Avg HR', 'Total Ascent', 'Load', 'Speed_mps', 'Avg Run Cadence']
-for col in numeric_cols:
-    if col in data.columns:
-        data[col] = data[col].apply(parse_numeric)
+    rtss_list = []
+    
+    for i, row in df.iterrows():
+        # Get Summary Metrics
+        secs = row['Seconds']
+        speed = row['Speed_mps']
+        grade = row['Grade_Pct']
         
-window = 28
-features = []
-targets = []
+        if speed > 0 and secs > 0:
+            avg_pace_sec_km = 1000.0 / speed
+            gap = alg.calculate_gap(avg_pace_sec_km, grade)
+            val = alg.calculate_rtss(gap, secs, THRESHOLD_PACE)
+            rtss_list.append(val)
+        else:
+            rtss_list.append(0)
 
-for i in range(len(data) - window + 1):
-    block = data.iloc[i:i+window]
-    features.append([
-        block['Load'].mean(),
-        block['Distance'].mean(),
-        block['Avg HR'].mean(),
-        block['Avg Run Cadence'].mean(),
-        block['Total Ascent'].mean()
-    ])
-    targets.append(block['Speed_mps'].mean())
+    df['calc_rtss'] = rtss_list
+    
+    # If it has TSS already, It will take that.
+    if 'Training Stress Score®' in df.columns:
+         df['Final_Load'] = np.where(df['Training Stress Score®'] > 0, df['Training Stress Score®'], df['calc_rtss'])
+    else:
+        df['Final_Load'] = df['calc_rtss']
 
-features = np.array(features)
-targets = np.array(targets)
+    # Banister Optimization
+    print("Optimizing Banister Parameters...")
+    load_history = df['Final_Load'].values
+    actual_perf = df['Speed_mps'].values 
+    hr_data = df['Avg HR'].values
+    
+    def loss_func(params):
+        k1, k2, p0, tau1, tau2 = params
+        
+        # Physical Validity
+        if tau1 <= tau2 + 5: return 99999999
+        
+        _, _, preds = alg.banister_recursive(params, load_history)
+        
+        # Training on Quality Runs
+        mask = (actual_perf > 2.5) & (hr_data > 140)
+        if np.sum(mask) < 5: return 99999999 
+        
+        return np.mean((preds[mask] - actual_perf[mask])**2)
+    
+    init_params = [0.1, 0.2, 3.5, 45.0, 10.0]
+    
+    # Guardrails so its accurate
+    bounds = [
+        (0.0001, 2.0),  # k1 (Fitness Gain)
+        (0.0001, 2.0),  # k2 (Fatigue Cost)
+        (1.0, 6.0),     # p0 (Base Speed m/s)
+        (40.0, 90.0),   # tau1 (Fitness: Long Term) -> FORCED to be 40+ days
+        (5.0, 15.0)     # tau2 (Fatigue: Short Term) -> FORCED to be 5-15 days
+    ]
+    # Use L-BFGS-B
+    res = minimize(loss_func, init_params, method='L-BFGS-B', bounds=bounds)
+    best_params = res.x
+    print(f"Optimal Params: {best_params}")
+    print(f"  - Fitness Tau: {best_params[3]:.1f} days (Target: 42)")
+    print(f"  - Fatigue Tau: {best_params[4]:.1f} days (Target: 7)")
+    
+    alg.save_model(best_params, 'banister_params.pkl')
+    
+    # Train Neural Net on Residuals
+    _, _, physics_preds = alg.banister_recursive(best_params, load_history)
+    residuals = actual_perf - physics_preds
+    
+    X, y = [], []
+    window = 7
+    for i in range(window, len(df)):
+        if actual_perf[i] < 1.0: continue 
+        
+        win_slice = df.iloc[i-window : i]
+        current_hr = df['Avg HR'].iloc[i] if 'Avg HR' in df.columns else 140
+        
+        feat = [
+            win_slice['Final_Load'].mean(),
+            win_slice['Total Ascent'].mean(),
+            current_hr
+        ]
+        X.append(feat)
+        y.append(residuals[i])
+        
+    if len(X) > 10:
+        # Better R^2 fix
+        pipe = make_pipeline(
+            StandardScaler(), 
+            MLPRegressor(hidden_layer_sizes=(64, 32), max_iter=5000, random_state=42)
+        )
+        
+        pipe.fit(X, y)
+        alg.save_model(pipe, 'fitness_nn_model.pkl')
+        
+        # Calculate R^2 manually since it's a pipeline
+        score = pipe.score(X, y)
+        print(f"Saved fitness_nn_model.pkl (R^2: {score:.4f})")
+    else:
+        print("Not enough data to train Neural Net.")
 
-mask = ~np.isnan(features).any(axis=1) & ~np.isnan(targets)
-features_clean = features[mask]
-targets_clean = targets[mask]
-
-nn_model = MLPRegressor(solver='lbfgs', activation='relu', hidden_layer_sizes=[50], random_state=42)
-nn_model.fit(features_clean, targets_clean)
-
-joblib.dump(nn_model, 'fitness_nn_model.pkl')
-
-print(f"Neural net trained on {len(targets_clean)} samples")
+if __name__ == '__main__':
+    train_fitness_model()
