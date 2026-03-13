@@ -8,8 +8,9 @@ for runners to mark their workouts as completing coach-defined workouts.
 
 ## Current Status
 This project is currently in very early development and we are currently trying to create the necessary algorithms and API spec before developing either the backend or the frontend.
+Currently, we are planning the endpoints and API spec for Runify.
 
-To see our progress, check out our [Google Doc](https://docs.google.com/document/d/1otQ1p44epb4aDC_gV2EMzUMwYKy_1-d5wA-t6tC3zEU/view).
+To see our progress, check out our [Google Doc](https://docs.google.com/document/d/1otQ1p44epb4aDC_gV2EMzUMwYKy_1-d5wA-t6tC3zEU/view) (Somewhat outdated, I believe).
 
 ## Stack
 
