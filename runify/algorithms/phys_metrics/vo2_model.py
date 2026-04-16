@@ -4,22 +4,19 @@ from typing import Dict, Any
 import joblib
 import numpy as np
 import pandas as pd
-from keras.models import load_model
 
 # Artifact (old as time)
 DEFAULT_ARTIFACT = 'vo2_pipeline.pkl'
 
 
 def save_pipeline(scaler, label_encoder, model, out_dir: str = '.', artifacts_name: str = DEFAULT_ARTIFACT) -> str:
-    """Save scaler, label encoder and Keras model. Returns path to PKL."""
+    """Save scaler, label encoder and sklearn model. Returns path to PKL."""
     os.makedirs(out_dir, exist_ok=True)
-    model_path = os.path.join(out_dir, 'vo2_model.h5')
-    model.save(model_path)
 
     pipeline = {
         'scaler': scaler,
         'label_encoder': label_encoder,
-        'model_path': model_path,
+        'model': model,  # sklearn model (no separate .h5 file needed)
     }
 
     pkl_path = os.path.join(out_dir, artifacts_name)
@@ -29,31 +26,18 @@ def save_pipeline(scaler, label_encoder, model, out_dir: str = '.', artifacts_na
 
 def load_pipeline(pkl_path: str) -> Dict[str, Any]:
     """
-    Load pipeline PKL and Keras model. 
-    Robustly finds the .h5 model file in the same directory as the .pkl.
+    Load pipeline PKL with sklearn model.
     """
     if not os.path.exists(pkl_path):
         raise FileNotFoundError(f"Pipeline file not found: {pkl_path}")
         
     pipeline = joblib.load(pkl_path)
     
-    # Fix: Don't trust the saved 'model_path'. 
-    # Look for 'vo2_model.h5' in the same folder as the loaded pkl_path.
-    base_dir = os.path.dirname(pkl_path)
-    robust_model_path = os.path.join(base_dir, 'vo2_model.h5')
-    
-    if os.path.exists(robust_model_path):
-        from keras.models import load_model
-        model = load_model(robust_model_path)
-        pipeline['model'] = model
-    else:
-        # Fallback to the saved path if local one fails
-        try:
-            from keras.models import load_model
-            model = load_model(pipeline['model_path'])
-            pipeline['model'] = model
-        except Exception:
-            raise FileNotFoundError(f"Could not find vo2_model.h5 in {base_dir} or {pipeline.get('model_path')}")
+    # Validate required components
+    if 'model' not in pipeline:
+        raise ValueError("Pipeline missing 'model' component")
+    if 'scaler' not in pipeline:
+        raise ValueError("Pipeline missing 'scaler' component")
             
     return pipeline
 
@@ -145,6 +129,7 @@ def predict_vo2_refined(row: Dict[str, Any], pipeline: Dict[str, Any], streams: 
         'gender': row.get('gender', 0)
     }])
 
+    df['gender'] = df['gender'].astype(object)
     #Force gender to be a number
     le = pipeline.get('label_encoder')
     gender_val = df.loc[0, 'gender']

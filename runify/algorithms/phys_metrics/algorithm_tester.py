@@ -42,9 +42,9 @@ class TestPhysiologicalMetrics(unittest.TestCase):
         pace_per_km = 300  # 5:00/km
         elev_gain = 500    # 500m gain
         dist = 10          # 10km
+        grade = elev_gain / dist * 100  # Gradient = 5%
         
-        # Gradient = 5%
-        gap = calculate_gap(pace_per_km, elev_gain, dist)
+        gap = calculate_gap(pace_per_km, grade)
         print(f"[GAP] Raw Pace: {pace_per_km}s/km -> GAP: {gap:.2f}s/km")
         
         # GAP should be LOWER (faster) than raw pace because we worked harder
