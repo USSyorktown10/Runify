@@ -62,11 +62,13 @@ def minetti_grade_adjustment(grade_percent):
     Minetti (2002) Energy Cost of Running.
     Returns J/kg/m (Joules per kg per meter).
     """
-    i = grade_percent / 100.0 
+    # clip +- 45% to keep it stable
+    i = max(min(grade_percent / 100.0, 0.45), -0.45)
     cost = 155.4*(i**5) - 30.4*(i**4) - 43.3*(i**3) + 46.3*(i**2) + 19.5*i + 3.6
     
-    # Safety floor: Running downhill never becomes "free" energy generation
+    # Safety floor for running downhill
     return max(cost, 1.0)
+
 
 def strava_grade_adjustment(grade_percent):
     """
@@ -104,7 +106,6 @@ def calculate_gap(pace_per_km, grade_percent):
     
     # GAP = Actual Pace / Factor (Faster pace for harder work)
     return pace_per_km / adjustment_factor
-
 
 def calculate_ngp(pace_input, grade_input):
     """
@@ -280,10 +281,12 @@ def estimate_vdot(distance_meters, time_seconds):
     # Percent of VO2Max Sustainable for this duration
     time_min = time_seconds / 60.0
     # Regression of world record drops
-    percent_max = 0.8 + 0.1894393 * math.exp(-0.012778 * time_min) + 0.2989558 * math.exp(-0.1932605 * time_min)
-    
+    percent_max = 0.8 + 0.1894393 * np.exp(-0.012778 * time_min) + 0.2989558 * np.exp(-0.1932605 * time_min)
+
     # VDOT
     return vo2_cost / percent_max
+
+print(estimate_vdot(1600, 269))
 
 '''
 NN Functions start here

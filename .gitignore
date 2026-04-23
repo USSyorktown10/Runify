@@ -20,3 +20,4 @@ runify-api-tenative/
 *.db
 runify/algorithms/routes/hugging_face_test.py
 runify/algorithms/phys_metrics/artifacts/
+runify/algorithms/phys_metrics/csv/
