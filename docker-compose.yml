@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: runify
+      POSTGRES_PASSWORD: runify
+      POSTGRES_DB: runify
+    ports:
+      - "5432:5432"
+    volumes:
+      - runify_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U runify -d runify"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  runify_pgdata:
