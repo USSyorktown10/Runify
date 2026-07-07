@@ -1,7 +1,5 @@
 # Runify R1 Backend
 
-FastAPI + PostgreSQL backend for Runify, a web-based athletic analysis and social platform.
-
 ## Quick Start
 
 ### Prerequisites
@@ -31,7 +29,6 @@ alembic upgrade head
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-* **Interactive API Documentation**: Once running, open [http://localhost:8000/docs](http://localhost:8000/docs) in your browser.
 
 ### Run Tests
 
@@ -45,7 +42,6 @@ pytest tests/test_integration.py -v
 
 ### Development Utilities
 
-This codebase uses **Ruff** for fast linting and formatting.
 
 ```bash
 # Run linter checks
