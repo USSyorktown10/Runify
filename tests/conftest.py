@@ -1,14 +1,9 @@
 """Shared pytest fixtures for Runify API tests."""
 import os
-
-os.environ["AUTO_CREATE_TABLES"] = "false"
-os.environ["SYNC_UPLOADS"] = "true"
-
+import httpx
 import pytest
-from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 import app.models.activity
 import app.models.athlete
@@ -16,23 +11,23 @@ import app.models.auth
 import app.models.segment
 import app.models.social  # noqa: F401
 from app.db.base import Base
-from app.db.session import get_db
-from app.main import application as fastapi_app
 
-SQLALCHEMY_DATABASE_URL = "sqlite://"
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
+# Connect to the Postgres database running in Docker (exposed on localhost:5432)
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://runify:runify@localhost:5432/runify")
+engine = create_engine(DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 @pytest.fixture(autouse=True)
-def setup_db():
+def setup_db(db):
+    # Ensure tables exist (no-op if already created by Alembic in the container)
     Base.metadata.create_all(bind=engine)
+    
+    # Delete all data from tables in reversed order of dependency to prevent foreign key issues
+    for table in reversed(Base.metadata.sorted_tables):
+        db.execute(table.delete())
+    db.commit()
     yield
-    Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture
@@ -45,14 +40,9 @@ def db():
 
 
 @pytest.fixture
-def client(db):
-    def override_get_db():
-        try:
-            yield db
-        finally:
-            pass
-
-    fastapi_app.dependency_overrides[get_db] = override_get_db
-    with TestClient(fastapi_app) as c:
+def client():
+    # Connect directly to the FastAPI server running inside the container
+    base_url = os.getenv("TEST_SERVER_URL", "http://localhost:8000")
+    with httpx.Client(base_url=base_url, follow_redirects=True) as c:
         yield c
-    fastapi_app.dependency_overrides.clear()
+

@@ -1,7 +1,7 @@
 """Test helpers for creating users and API resources."""
 from __future__ import annotations
 
-from fastapi.testclient import TestClient
+import httpx
 
 GPX_SAMPLE = """<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="Runify Test">
@@ -24,7 +24,7 @@ GPX_SAMPLE = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 def signup_and_login(
-    client: TestClient,
+    client: httpx.Client,
     username: str,
     email: str,
     password: str = "securepass123",
@@ -54,7 +54,7 @@ def signup_and_login(
 
 
 def create_manual_activity(
-    client: TestClient,
+    client: httpx.Client,
     headers: dict,
     name: str,
     distance: float = 10000,
@@ -88,8 +88,8 @@ def create_manual_activity(
     return resp.json()["id"]
 
 
-def upload_gpx_activity(client: TestClient, headers: dict, filename: str = "run.gpx") -> str:
-    """Upload GPX and wait for processing (sync in tests — background task runs inline)."""
+def upload_gpx_activity(client: httpx.Client, headers: dict, filename: str = "run.gpx") -> str:
+    """Upload GPX and wait for processing (polls since background task runs in uvicorn container)."""
     resp = client.post(
         "/upload",
         headers=headers,
@@ -99,9 +99,16 @@ def upload_gpx_activity(client: TestClient, headers: dict, filename: str = "run.
     assert resp.status_code == 200, resp.text
     upload_id = resp.json()["upload_id"]
 
-    status_resp = client.get(f"/upload/{upload_id}", headers=headers)
-    assert status_resp.status_code == 200, status_resp.text
-    data = status_resp.json()
-    assert data["status"] == "completed", data.get("error_message")
-    assert data["activity_id"] is not None
-    return data["activity_id"]
+    import time
+    for _ in range(100):  # Wait up to 10 seconds (100 * 0.1s)
+        status_resp = client.get(f"/upload/{upload_id}", headers=headers)
+        assert status_resp.status_code == 200, status_resp.text
+        data = status_resp.json()
+        if data["status"] == "completed":
+            assert data["activity_id"] is not None
+            return data["activity_id"]
+        elif data["status"] == "failed":
+            raise Exception(f"Upload processing failed: {data.get('error_message')}")
+        time.sleep(0.1)
+
+    raise TimeoutError(f"Upload processing timed out for upload {upload_id}")

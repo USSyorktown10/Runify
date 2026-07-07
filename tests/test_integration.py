@@ -7,13 +7,13 @@ then exercises searches, likes, comments, feeds, notifications, and more.
 from __future__ import annotations
 
 import pytest
-from fastapi.testclient import TestClient
+import httpx
 
 from tests.helpers import create_manual_activity, signup_and_login, upload_gpx_activity
 
 
 @pytest.fixture
-def platform(client: TestClient) -> dict:
+def platform(client: httpx.Client) -> dict:
     """Seed a small social running network for integration tests."""
     alice = signup_and_login(
         client,
