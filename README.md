@@ -1,43 +1,67 @@
 # Runify R1 Backend
 
-FastAPI + PostgreSQL backend for the release 1
+FastAPI + PostgreSQL backend for Runify, a web-based athletic analysis and social platform.
 
-## Quick start
+## Quick Start
 
 ### Prerequisites
-- Python 3.12+ (project venv uses 3.14)
-- Docker (for PostgreSQL)
+- Python 3.10+ (written on 3.14)
+- Docker (for PostgreSQL database)
 
 ### Setup
 
 ```bash
-# Start PostgreSQL
+# Start the PostgreSQL database container
 docker compose up -d
 
-# Create virtualenv and install deps
+# Create virtual environment and activate it
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements-dev.txt
 
-# Configure environment
+# Install dependencies using the pyproject.toml package specification
+pip install -e ".[dev]"
+
+# Configure environment variables
 cp .env.example .env
 
-# Run the API
+# Run Alembic migrations (if applicable)
+alembic upgrade head
+
+# Run the API server locally
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-API docs: http://localhost:8000/docs
+* **Interactive API Documentation**: Once running, open [http://localhost:8000/docs](http://localhost:8000/docs) in your browser.
 
-### Run tests
+### Run Tests
 
 ```bash
-pytest tests/ -v                  # all tests (unit + integration + metrics)
-pytest tests/test_integration.py -v   # large multi-user integration suite only
+# Run all tests (unit + integration + metrics engine tests)
+pytest
+
+# Run the large multi-user integration suite in verbose mode
+pytest tests/test_integration.py -v
 ```
 
-### Seed demo data
+### Development Utilities
+
+This codebase uses **Ruff** for fast linting and formatting.
+
+```bash
+# Run linter checks
+ruff check .
+
+# Run linter checks and automatically apply fixes
+ruff check . --fix
+
+# Format the Python codebase according to project style
+ruff format .
+```
+
+### Seed Demo Data
+
+To populate the local PostgreSQL database with mock athletes, activities, social followers, and posts for local development testing:
 
 ```bash
 python scripts/seed.py
 ```
-
