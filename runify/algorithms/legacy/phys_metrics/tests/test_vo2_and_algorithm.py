@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
-from runify.algorithms.phys_metrics import vo2_model, algorithm
+from runify.algorithms.legacy.phys_metrics import algorithm
+from runify.algorithms.legacy.phys_metrics import vo2_model
 
 
 class DummyModel:

@@ -4,7 +4,7 @@ from scipy.optimize import minimize
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
-import algorithm as alg
+import runify.algorithms.legacy.phys_metrics.algorithm as alg
 
 # Personalize to yourself. These are basic configurations
 CSV_PATH = 'activities.csv'

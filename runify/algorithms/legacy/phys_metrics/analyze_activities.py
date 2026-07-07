@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import joblib
-import algorithm as alg
+import runify.algorithms.legacy.phys_metrics.algorithm as alg
 
 # CONFIG
 INPUT_CSV = 'activities.csv'

@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-import algorithm as alg
+import runify.algorithms.legacy.phys_metrics.algorithm as alg
 
 # CONFIG
 CSV_PATH = 'activities.csv'

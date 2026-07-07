@@ -15,7 +15,7 @@ try:
     from .vo2_model import load_pipeline as _load_vo2_pipeline, predict_vo2_from_row as _predict_vo2_from_row, predict_vo2_refined as _predict_vo2_refined
 except Exception:
     # script-style import
-    from vo2_model import load_pipeline as _load_vo2_pipeline, predict_vo2_from_row as _predict_vo2_from_row, predict_vo2_refined as _predict_vo2_refined
+    from runify.algorithms.legacy.phys_metrics.vo2_model import load_pipeline as _load_vo2_pipeline, predict_vo2_from_row as _predict_vo2_from_row, predict_vo2_refined as _predict_vo2_refined
 
 # Pre-define stuff
 
@@ -134,7 +134,8 @@ def calculate_ngp(pace_input, grade_input):
     
     if not speeds_mps: return 0
     
-    sum_fourth = sum([s**4 for s in speeds_mps])
+    sum_fourth = sum([
+s**4 for s in speeds_mps])
     avg_fourth = sum_fourth / len(speeds_mps)
     normalized_speed = avg_fourth ** 0.25
     

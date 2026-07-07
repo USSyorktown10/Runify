@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split, cross_val_score, KFold
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import algorithm as alg
+import runify.algorithms.legacy.phys_metrics.algorithm as alg
 from sklearn.ensemble import RandomForestRegressor
 
 CSV_PATH = 'activities.csv'

@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import pandas as pd
 import joblib
-from algorithm import (
+from runify.algorithms.legacy.phys_metrics.algorithm import (
     calculate_gap, 
     calculate_air_density, 
     banister_recursive, 
