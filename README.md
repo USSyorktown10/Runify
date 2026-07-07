@@ -60,8 +60,6 @@ ruff format .
 
 ### Seed Demo Data
 
-To populate the local PostgreSQL database with mock athletes, activities, social followers, and posts for local development testing:
-
 ```bash
 python scripts/seed.py
 ```
