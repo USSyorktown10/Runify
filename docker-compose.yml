@@ -15,5 +15,19 @@ services:
       timeout: 5s
       retries: 5
 
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+psycopg://runify:runify@postgres:5432/runify
+      - SECRET_KEY=dev-secret-change-in-production
+      - DEBUG=True
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   runify_pgdata:
