@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship, relationship
 
 from app.db.base import Base
 from app.models.athlete import new_uuid
@@ -114,7 +114,11 @@ class ClubPost(Base):
     author_id: Mapped[str] = mapped_column(ForeignKey("athletes.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(String(255))
     body: Mapped[str] = mapped_column(Text)
+    like_count: Mapped[int] = mapped_column(Integer, default=0)
+    comment_count: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    club: Mapped["Club"] = relationship("Club", foreign_keys=[club_id])
 
 
 class Notification(Base):

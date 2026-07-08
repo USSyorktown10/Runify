@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+@theme {
+  --color-global-bg: var(--global-bg);
+  --color-global-text: var(--global-text);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-link: var(--link);
+  --color-highlight: var(--highlight);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+:root,
+[data-theme="light"] {
+  --global-bg: #ffffff;
+  --global-text: #111827;
+  --surface: #f3f4f6;
+  --border: #d1d5db;
+  --accent: #059669;
+  --muted: #4b5563;
+  --link: #059669;
+  --highlight: #ea580c;
+  --phrase-further: #059669;
+  --phrase-more: #2563eb;
+  --phrase-efficiently: #7c3aed;
+  --phrase-smarter: #0891b2;
+  --phrase-together: #db2777;
+  --phrase-faster: #ea580c;
+  --phrase-stronger: #dc2626;
+  --phrase-longer: #ca8a04;
+  --phrase-happier: #65a30d;
+  --phrase-runify: #059669;
+}
+
+[data-theme="dark"] {
+  --global-bg: #0a0e14;
+  --global-text: #f0f6fc;
+  --surface: #161b22;
+  --border: #30363d;
+  --accent: #3fb950;
+  --muted: #9ca3af;
+  --link: #3fb950;
+  --highlight: #fb923c;
+  --phrase-further: #3fb950;
+  --phrase-more: #60a5fa;
+  --phrase-efficiently: #a78bfa;
+  --phrase-smarter: #22d3ee;
+  --phrase-together: #f472b6;
+  --phrase-faster: #fb923c;
+  --phrase-stronger: #f87171;
+  --phrase-longer: #fbbf24;
+  --phrase-happier: #a3e635;
+  --phrase-runify: #3fb950;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-global-bg text-global-text font-mono text-sm font-normal leading-snug;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-mono font-semibold;
+  }
+
+  code,
+  kbd,
+  pre {
+    @apply font-mono;
+  }
+}
+
+@layer components {
+  .display {
+    @apply font-mono text-3xl font-semibold leading-tight sm:text-4xl;
+  }
+
+  .title {
+    @apply font-mono text-xl font-semibold leading-tight sm:text-2xl;
+  }
+
+  .heading {
+    @apply font-mono text-lg font-semibold leading-snug;
+  }
+
+  .subheading {
+    @apply font-mono text-base font-semibold;
+  }
+
+  .label {
+    @apply font-mono text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+
+  .stat {
+    @apply font-mono text-xl font-medium tabular-nums;
+  }
+
+  .stat-label {
+    @apply font-mono text-xs font-medium uppercase tracking-wide text-muted;
+  }
+
+  .prose-runify {
+    @apply font-mono text-sm leading-snug text-global-text;
+  }
+
+  .meta {
+    @apply font-mono text-xs text-muted;
+  }
+
+  .cactus-link {
+    @apply text-accent underline-offset-2 hover:underline;
+  }
+
+  .field-input {
+    @apply w-full rounded-none border border-border bg-global-bg px-2.5 py-1.5 font-mono text-xs focus:border-accent focus:outline-none;
+  }
+
+  .btn-primary {
+    @apply rounded-none border border-accent bg-accent px-2.5 py-1.5 font-mono text-xs font-semibold text-global-bg hover:border-global-text disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply rounded-none border border-border bg-surface px-2.5 py-1.5 font-mono text-xs font-semibold hover:border-accent hover:text-accent;
+  }
+
+  .card {
+    @apply rounded-none border border-border bg-surface px-3 py-2;
+  }
+
+  .page-header {
+    @apply mb-4 flex flex-wrap items-end justify-between gap-3 border-b-2 border-border pb-3;
+  }
+
+  .data-table {
+    @apply w-full border-collapse font-mono text-xs;
+  }
+
+  .data-table th {
+    @apply border-b-2 border-border px-2 py-1 text-left font-semibold uppercase text-muted;
+  }
+
+  .data-table td {
+    @apply border-b border-border px-2 py-1 tabular-nums;
+  }
+
+  @keyframes landing-marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .landing-marquee {
+    animation: landing-marquee var(--marquee-duration, 45s) linear infinite;
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.25s ease-out forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-marquee {
+      animation: none;
+    }
+    .animate-fade-in-up {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Modals must sit above Leaflet controls (z-index up to 1000). */
+  .modal-overlay {
+    z-index: 1100;
+  }
+}

@@ -63,6 +63,7 @@ class ActivityService:
             moving_time=activity.moving_time,
             start_date=activity.start_date.isoformat(),
             polyline_summary=activity.polyline_summary,
+            device_name=activity.device_name,
             visibility=activity.visibility,
             biometrics_visibility=activity.biometrics_visibility,
             like_count=activity.like_count,

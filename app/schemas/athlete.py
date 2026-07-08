@@ -11,6 +11,9 @@ class SummaryAthlete(BaseModel):
     first_name: str
     last_name: str
     profile_picture_url: str
+    city: str = ""
+    state: str = ""
+    country: str = ""
 
 
 class MeAthlete(SummaryAthlete):

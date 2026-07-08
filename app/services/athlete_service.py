@@ -29,6 +29,9 @@ def to_summary(athlete: Athlete) -> SummaryAthlete:
         first_name=athlete.first_name,
         last_name=athlete.last_name,
         profile_picture_url=athlete.profile_picture_url,
+        city=athlete.city,
+        state=athlete.state,
+        country=athlete.country,
     )
 
 

@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: runify
       POSTGRES_DB: runify
     ports:
-      - "5432:5432"
+      - "5432:5432" # TODO: remove this in production
     volumes:
       - runify_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -29,5 +29,20 @@ services:
       postgres:
         condition: service_healthy
 
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - web
+
 volumes:
+  frontend_node_modules:
   runify_pgdata:

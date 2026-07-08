@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 import app.models.activity
 
@@ -25,8 +26,7 @@ from app.api.routers import (
 )
 from app.core.config import get_settings
 from app.core.errors import RunifyError, runify_error_handler
-from app.db.base import Base
-from app.db.session import engine
+from app.db.schema_sync import sync_schema
 
 
 @asynccontextmanager
@@ -35,7 +35,7 @@ async def lifespan(_app: FastAPI):
     settings.storage_dir.mkdir(parents=True, exist_ok=True)
     settings.uploads_dir.mkdir(parents=True, exist_ok=True)
     if settings.auto_create_tables:
-        Base.metadata.create_all(bind=engine)
+        sync_schema()
     yield
 
 
@@ -47,6 +47,17 @@ application = FastAPI(
 )
 
 application.add_exception_handler(RunifyError, runify_error_handler)
+
+application.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 application.include_router(authentication.router)
 application.include_router(athletes.router)

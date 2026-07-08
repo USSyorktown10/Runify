@@ -3,19 +3,21 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.pagination import paginate_offset
-from app.core.security import get_current_athlete
+from app.core.security import get_current_athlete, get_optional_athlete
 from app.db.session import get_db
 from app.models.athlete import Athlete
 from app.models.social import Club, ClubMember
+from app.schemas.activity import PaginatedActivitiesResponse
 from app.schemas.club import (
     CreateClubRequest,
     CreatePostRequest,
     DetailedClub,
+    PaginatedClubLeaderboardResponse,
     PaginatedClubsResponse,
     UpdateClubPreferencesRequest,
 )
 from app.schemas.common import SuccessResponse
-from app.schemas.social import PaginatedAthletesResponse
+from app.schemas.social import PaginatedAthletesResponse, PaginatedPostsResponse
 from app.services.athlete_service import to_summary
 from app.services.club_service import club_service
 
@@ -63,12 +65,17 @@ def athlete_clubs(
 
 
 @router.get("/clubs/{club_id}", response_model=DetailedClub)
-def get_club(club_id: str, db: Session = Depends(get_db)):
+def get_club(
+    club_id: str,
+    viewer: Athlete | None = Depends(get_optional_athlete),
+    db: Session = Depends(get_db),
+):
     club = db.get(Club, club_id)
     if not club:
         from app.core.errors import NotFoundError
         raise NotFoundError()
-    return club_service.to_detailed(db, club)
+    viewer_id = viewer.id if viewer else None
+    return club_service.to_detailed(db, club, viewer_id)
 
 
 @router.get("/clubs/{club_id}/members", response_model=PaginatedAthletesResponse)
@@ -84,6 +91,119 @@ def club_members(
         stmt = stmt.where(Athlete.username.ilike(f"%{query}%"))
     items, pagination = paginate_offset(db, stmt, page, per_page)
     return PaginatedAthletesResponse(pagination=pagination, items=[to_summary(a) for a in items])
+
+
+@router.get("/clubs/{club_id}/posts", response_model=PaginatedPostsResponse)
+def club_posts(
+    club_id: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    viewer: Athlete | None = Depends(get_optional_athlete),
+    db: Session = Depends(get_db),
+):
+    viewer_id = viewer.id if viewer else None
+    items, pagination = club_service.list_posts(db, club_id, viewer_id, page, per_page)
+    return PaginatedPostsResponse(pagination=pagination, items=items)
+
+
+@router.get("/clubs/{club_id}/leaderboard", response_model=PaginatedClubLeaderboardResponse)
+def club_leaderboard(
+    club_id: str,
+    period: str = Query("this_week"),
+    metric: str = Query("distance"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    viewer: Athlete | None = Depends(get_optional_athlete),
+    db: Session = Depends(get_db),
+):
+    viewer_id = viewer.id if viewer else None
+    items, pagination, viewer_summary = club_service.leaderboard(
+        db, club_id, viewer_id, period, metric, page, per_page
+    )
+    return PaginatedClubLeaderboardResponse(
+        pagination=pagination, items=items, viewer_summary=viewer_summary
+    )
+
+
+@router.get("/clubs/{club_id}/recent-activity", response_model=PaginatedActivitiesResponse)
+def club_recent_activity(
+    club_id: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    viewer: Athlete | None = Depends(get_optional_athlete),
+    db: Session = Depends(get_db),
+):
+    viewer_id = viewer.id if viewer else None
+    items, pagination = club_service.recent_activity(db, club_id, viewer_id, page, per_page)
+    return PaginatedActivitiesResponse(
+        pagination=pagination,
+        items=items,
+    )
+
+
+@router.get("/clubs/{club_id}/join-requests", response_model=PaginatedAthletesResponse)
+def club_join_requests(
+    club_id: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    items, pagination = club_service.list_join_requests(db, club_id, athlete.id, page, per_page)
+    return PaginatedAthletesResponse(pagination=pagination, items=[to_summary(a) for a in items])
+
+
+@router.post("/clubs/{club_id}/join-requests/{athlete_id}/accept", response_model=SuccessResponse)
+def accept_join_request(
+    club_id: str,
+    athlete_id: str,
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    success, error = club_service.accept_join_request(db, club_id, athlete_id, athlete.id)
+    return SuccessResponse(success=success, error_message=error)
+
+
+@router.post("/clubs/{club_id}/join-requests/{athlete_id}/deny", response_model=SuccessResponse)
+def deny_join_request(
+    club_id: str,
+    athlete_id: str,
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    success, error = club_service.deny_join_request(db, club_id, athlete_id, athlete.id)
+    return SuccessResponse(success=success, error_message=error)
+
+
+@router.post("/clubs/{club_id}/invites/accept", response_model=SuccessResponse)
+def accept_club_invite(
+    club_id: str,
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    success, error = club_service.accept_invite(db, club_id, athlete.id)
+    return SuccessResponse(success=success, error_message=error)
+
+
+@router.post("/clubs/{club_id}/invites/deny", response_model=SuccessResponse)
+def deny_club_invite(
+    club_id: str,
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    success, error = club_service.deny_invite(db, club_id, athlete.id)
+    return SuccessResponse(success=success, error_message=error)
+
+
+@router.delete("/clubs/{club_id}/members/{user_id}", response_model=SuccessResponse)
+def remove_club_member(
+    club_id: str,
+    user_id: str,
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    success, error = club_service.remove_member(db, club_id, user_id, athlete.id)
+    return SuccessResponse(success=success, error_message=error)
 
 
 @router.delete("/clubs/{club_id}", response_model=SuccessResponse)

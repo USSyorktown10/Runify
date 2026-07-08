@@ -27,7 +27,7 @@ def list_notifications(
     items, pagination = paginate_offset(db, stmt, page, per_page)
     return PaginatedNotificationsResponse(
         pagination=pagination,
-        items=[notification_service.to_schema(n) for n in items],
+        items=notification_service.to_schemas(db, items),
     )
 
 

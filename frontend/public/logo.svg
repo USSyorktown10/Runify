@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Runify">
+  <rect width="64" height="64" rx="14" class="logo-bg" fill="#2abc89"/>
+  <path
+    d="M18 44V20h12.5c5.2 0 8.5 2.8 8.5 7.2 0 3.1-1.6 5.3-4.2 6.2L40 44h-6.5l-4.8-9.2H24v9.2H18zm6-14.6h5.8c2.5 0 3.9-1.2 3.9-3.1S32.3 23 29.6 23H24v6.4z"
+    fill="#0d1117"
+  />
+  <path
+    d="M42 20c8 0 12 4.8 12 12s-4 12-12 12"
+    stroke="#0d1117"
+    stroke-width="3"
+    stroke-linecap="round"
+    fill="none"
+    opacity="0.85"
+  />
+  <circle cx="46" cy="32" r="3" fill="#d482ab"/>
+  <path
+    d="M42 44l6-8 6 8"
+    stroke="#0d1117"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+    opacity="0.7"
+  />
+</svg>

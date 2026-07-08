@@ -11,6 +11,7 @@ import app.models.auth
 import app.models.segment
 import app.models.social  # noqa: F401
 from app.db.base import Base
+from app.db.schema_sync import sync_schema
 
 # Connect to the Postgres database running in Docker (exposed on localhost:5432)
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://runify:runify@localhost:5432/runify")
@@ -20,9 +21,8 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 @pytest.fixture(autouse=True)
 def setup_db(db):
-    # Ensure tables exist (no-op if already created by Alembic in the container)
-    Base.metadata.create_all(bind=engine)
-    
+    sync_schema()
+
     # Delete all data from tables in reversed order of dependency to prevent foreign key issues
     for table in reversed(Base.metadata.sorted_tables):
         db.execute(table.delete())

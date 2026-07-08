@@ -17,6 +17,7 @@ class SummaryActivity(BaseModel):
     moving_time: int
     start_date: str
     polyline_summary: str
+    device_name: str = ""
     visibility: str
     biometrics_visibility: str
     like_count: int

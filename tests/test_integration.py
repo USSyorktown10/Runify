@@ -272,6 +272,14 @@ class TestSocialEngagement:
         # Like the comment
         client.post(f"/comments/{comment_id}/likes", headers=carol["headers"])
 
+        likers = client.get(f"/activities/{act_id}/likes", headers=alice["headers"]).json()
+        assert likers["pagination"]["total_items"] >= 2
+        assert len(likers["items"]) >= 1
+        assert "first_name" in likers["items"][0]
+
+        comment_likers = client.get(f"/comments/{comment_id}/likes", headers=alice["headers"]).json()
+        assert comment_likers["pagination"]["total_items"] >= 1
+
         # Unlike
         client.delete(f"/activities/{act_id}/likes", headers=bob["headers"])
         bob_detail2 = client.get(f"/activities/{act_id}", headers=bob["headers"]).json()
@@ -353,12 +361,97 @@ class TestClubs:
         )
         assert post_resp.json()["success"] is True
 
-        detail = client.get(f"/clubs/{club_id}").json()
+        detail = client.get(f"/clubs/{club_id}", headers=carol["headers"]).json()
         assert detail["name"] == "Boston Track Club"
         assert detail["member_count"] >= 2
+        assert detail["is_member"] is True
+        assert detail["viewer_role"] == "member"
+
+        posts = client.get(f"/clubs/{club_id}/posts", headers=carol["headers"]).json()
+        assert posts["pagination"]["total_items"] >= 1
+        assert any(p["title"] == "Saturday Long Run" for p in posts["items"])
+
+        feed = client.get("/athlete/feed", headers=carol["headers"], params={"limit": 50}).json()
+        club_posts = [item for item in feed["items"] if item["type"] == "club_post"]
+        assert club_posts, "expected club posts in home feed for club member"
+        club_data = club_posts[0]["club_post_data"]
+        assert club_data["club"]["id"] == club_id
+        assert club_data["club"]["name"] == "Boston Track Club"
+        assert "like_count" in club_data
+        assert "comment_count" in club_data
+        assert "is_liked" in club_data
 
         athlete_clubs = client.get(f"/athletes/{bob['id']}/clubs").json()
         assert len(athlete_clubs["items"]) >= 1
+
+    def test_club_leaderboard_aggregates_runs(self, client, platform):
+        club_id = platform["club_id"]
+        alice = platform["users"]["alice"]
+
+        leaderboard = client.get(
+            f"/clubs/{club_id}/leaderboard",
+            headers=alice["headers"],
+            params={"period": "this_week", "metric": "distance"},
+        ).json()
+        assert "items" in leaderboard
+        assert leaderboard["pagination"]["total_items"] >= 1
+        entry = leaderboard["items"][0]
+        assert entry["distance"] > 0
+        assert entry["activity_count"] >= 1
+        assert "viewer_summary" in leaderboard
+
+    def test_leave_club_decrements_member_count(self, client, platform):
+        club_id = platform["club_id"]
+        carol = platform["users"]["carol"]
+        alice = platform["users"]["alice"]
+
+        client.post(f"/clubs/{club_id}/join", headers=carol["headers"])
+
+        before = client.get(f"/clubs/{club_id}", headers=alice["headers"]).json()
+        count_before = before["member_count"]
+
+        resp = client.delete(f"/clubs/{club_id}/members/{carol['id']}", headers=carol["headers"])
+        assert resp.json()["success"] is True
+
+        after = client.get(f"/clubs/{club_id}", headers=alice["headers"]).json()
+        assert after["member_count"] == count_before - 1
+
+        carol_detail = client.get(f"/clubs/{club_id}", headers=carol["headers"]).json()
+        assert carol_detail["is_member"] is False
+
+    def test_private_club_join_request_flow(self, client, platform):
+        alice = platform["users"]["alice"]
+        dave = platform["users"]["dave"]
+
+        private_resp = client.post(
+            "/clubs",
+            headers=alice["headers"],
+            json={
+                "name": "Private Runners",
+                "description": "Invite only",
+                "is_private": True,
+                "tags": ["running"],
+            },
+        )
+        private_id = private_resp.json()["club"]["id"]
+
+        client.post(f"/clubs/{private_id}/join", headers=dave["headers"])
+        pending = client.get(f"/clubs/{private_id}", headers=dave["headers"]).json()
+        assert pending["has_pending_join_request"] is True
+        assert pending["is_member"] is False
+
+        requests = client.get(f"/clubs/{private_id}/join-requests", headers=alice["headers"]).json()
+        assert any(a["id"] == dave["id"] for a in requests["items"])
+
+        accept = client.post(
+            f"/clubs/{private_id}/join-requests/{dave['id']}/accept",
+            headers=alice["headers"],
+        )
+        assert accept.json()["success"] is True
+
+        joined = client.get(f"/clubs/{private_id}", headers=dave["headers"]).json()
+        assert joined["is_member"] is True
+        assert joined["viewer_role"] == "member"
 
 
 class TestSegmentsAndRoutes:
@@ -450,6 +543,22 @@ class TestNotifications:
 
         notifs = client.get("/athlete/notifications", headers=alice["headers"]).json()
         assert notifs["pagination"]["total_items"] >= 1
+        for n in notifs["items"]:
+            assert n["message"]
+            assert n["link_path"].startswith("/")
+
+        like_notif = next((n for n in notifs["items"] if n["type"] == "activity_like"), None)
+        if like_notif:
+            assert like_notif["link_path"] == f"/activities/{act_id}"
+            assert like_notif.get("target")
+            assert like_notif["target"]["kind"] == "activity"
+            assert like_notif["target"]["title"]
+
+        comment_notif = next((n for n in notifs["items"] if n["type"] == "activity_comment"), None)
+        if comment_notif:
+            assert comment_notif.get("target")
+            assert comment_notif["target"]["kind"] == "activity"
+            assert comment_notif.get("excerpt")
 
         count = client.get("/athlete/notifications/number", headers=alice["headers"]).json()
         assert count["unread_count"] >= 1

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from app.schemas.athlete import SummaryAthlete
 from app.schemas.common import PaginatedResponseMetadata
 
 
@@ -23,6 +24,37 @@ class DetailedClub(BaseModel):
     created_at: str
     admins: list[str]
     tags: list[str]
+    is_member: bool = False
+    viewer_role: str | None = None
+    has_pending_join_request: bool = False
+    has_pending_invite: bool = False
+
+
+class ClubLeaderboardEntry(BaseModel):
+    rank: int
+    athlete_id: str
+    athlete: SummaryAthlete
+    distance: float
+    activity_count: int
+    longest_activity_id: str | None
+    longest_distance: float
+    avg_pace: float | None
+    elevation_gain: float
+
+
+class ClubLeaderboardSummary(BaseModel):
+    rank: int | None
+    distance: float
+    activity_count: int
+    longest_distance: float
+    avg_pace: float | None
+    elevation_gain: float
+
+
+class PaginatedClubLeaderboardResponse(BaseModel):
+    pagination: PaginatedResponseMetadata
+    items: list[ClubLeaderboardEntry]
+    viewer_summary: ClubLeaderboardSummary | None = None
 
 
 class CreateClubRequest(BaseModel):

@@ -6,7 +6,7 @@ from app.core.pagination import paginate_offset
 from app.core.security import get_current_athlete
 from app.db.session import get_db
 from app.models.athlete import Athlete
-from app.models.social import Comment as CommentModel
+from app.models.social import Comment as CommentModel, Like as LikeModel
 from app.schemas.common import SuccessResponse
 from app.schemas.social import (
     Comment as CommentSchema,
@@ -29,28 +29,11 @@ def activity_comments(
     activity_id: str,
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
+    athlete: Athlete = Depends(get_current_athlete),
     db: Session = Depends(get_db),
 ):
-    stmt = (
-        select(CommentModel)
-        .where(CommentModel.target_type == "activity", CommentModel.target_id == activity_id)
-        .order_by(CommentModel.created_at.desc())
-    )
-    items, pagination = paginate_offset(db, stmt, page, per_page)
-    result = []
-    for c in items:
-        author = db.get(Athlete, c.author_id)
-        result.append(
-            CommentSchema(
-                id=c.id,
-                author=to_summary(author),
-                text=c.text,
-                created_at=c.created_at.isoformat(),
-                like_count=c.like_count,
-                is_liked=False,
-            )
-        )
-    return PaginatedCommentsResponse(pagination=pagination, items=result)
+    stmt = social_service.list_comments(db, "activity", activity_id)
+    return _comments_response(db, athlete, stmt, page, per_page)
 
 
 @router.post("/activities/{activity_id}/comments")
@@ -95,6 +78,18 @@ def delete_activity_comment(
     return SuccessResponse(success=True)
 
 
+@router.get("/activities/{activity_id}/likes", response_model=PaginatedAthletesResponse)
+def activity_likers(
+    activity_id: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    stmt = social_service.list_likers(db, "activity", activity_id)
+    items, pagination = paginate_offset(db, stmt, page, per_page)
+    return PaginatedAthletesResponse(pagination=pagination, items=[to_summary(a) for a in items])
+
+
 @router.post("/activities/{activity_id}/likes", response_model=SuccessResponse)
 def like_activity(
     activity_id: str,
@@ -113,6 +108,209 @@ def unlike_activity(
 ):
     success, error = social_service.unlike(db, athlete.id, "activity", activity_id)
     return SuccessResponse(success=success, error_message=error)
+
+
+@router.get("/posts/{post_id}/likes", response_model=PaginatedAthletesResponse)
+def post_likers(
+    post_id: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    stmt = social_service.list_likers(db, "post", post_id)
+    items, pagination = paginate_offset(db, stmt, page, per_page)
+    return PaginatedAthletesResponse(pagination=pagination, items=[to_summary(a) for a in items])
+
+
+@router.post("/posts/{post_id}/likes", response_model=SuccessResponse)
+def like_post(
+    post_id: str,
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    success, error = social_service.like(db, athlete.id, "post", post_id)
+    return SuccessResponse(success=success, error_message=error)
+
+
+@router.delete("/posts/{post_id}/likes", response_model=SuccessResponse)
+def unlike_post(
+    post_id: str,
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    success, error = social_service.unlike(db, athlete.id, "post", post_id)
+    return SuccessResponse(success=success, error_message=error)
+
+
+def _comments_response(db: Session, athlete: Athlete, stmt, page: int, per_page: int) -> PaginatedCommentsResponse:
+    items, pagination = paginate_offset(db, stmt, page, per_page)
+    comment_ids = [c.id for c in items]
+    liked_set: set[str] = set()
+    like_counts: dict[str, int] = {}
+    if comment_ids:
+        liked_ids = db.scalars(
+            select(LikeModel.target_id).where(
+                LikeModel.athlete_id == athlete.id,
+                LikeModel.target_type == "comment",
+                LikeModel.target_id.in_(comment_ids),
+            )
+        ).all()
+        liked_set = set(liked_ids)
+        like_counts = social_service.comment_like_counts(db, comment_ids)
+    result = []
+    for c in items:
+        author = db.get(Athlete, c.author_id)
+        result.append(
+            CommentSchema(
+                id=c.id,
+                author=to_summary(author),
+                text=c.text,
+                created_at=c.created_at.isoformat(),
+                like_count=like_counts.get(c.id, 0),
+                is_liked=c.id in liked_set,
+            )
+        )
+    return PaginatedCommentsResponse(pagination=pagination, items=result)
+
+
+@router.get("/posts/{post_id}/comments", response_model=PaginatedCommentsResponse)
+def post_comments(
+    post_id: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    stmt = social_service.list_comments(db, "post", post_id)
+    return _comments_response(db, athlete, stmt, page, per_page)
+
+
+@router.post("/posts/{post_id}/comments")
+def create_post_comment(
+    post_id: str,
+    text: str = Query(...),
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    comment = social_service.add_comment(db, athlete.id, "post", post_id, text)
+    return {"comment": comment, "success": True}
+
+
+@router.patch("/posts/{post_id}/comments/{comment_id}", response_model=SuccessResponse)
+def edit_post_comment(
+    post_id: str,
+    comment_id: str,
+    text: str = Query(...),
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    comment = db.get(CommentModel, comment_id)
+    if not comment or comment.author_id != athlete.id or comment.target_id != post_id:
+        return SuccessResponse(success=False, error_message="Comment not found")
+    comment.text = text
+    db.commit()
+    return SuccessResponse(success=True)
+
+
+@router.delete("/posts/{post_id}/comments/{comment_id}", response_model=SuccessResponse)
+def delete_post_comment(
+    post_id: str,
+    comment_id: str,
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    comment = db.get(CommentModel, comment_id)
+    if not comment or comment.author_id != athlete.id:
+        return SuccessResponse(success=False, error_message="Comment not found")
+    db.delete(comment)
+    db.commit()
+    return SuccessResponse(success=True)
+
+
+@router.get("/club-posts/{post_id}/likes", response_model=PaginatedAthletesResponse)
+def club_post_likers(
+    post_id: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    stmt = social_service.list_likers(db, "club_post", post_id)
+    items, pagination = paginate_offset(db, stmt, page, per_page)
+    return PaginatedAthletesResponse(pagination=pagination, items=[to_summary(a) for a in items])
+
+
+@router.post("/club-posts/{post_id}/likes", response_model=SuccessResponse)
+def like_club_post(
+    post_id: str,
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    success, error = social_service.like(db, athlete.id, "club_post", post_id)
+    return SuccessResponse(success=success, error_message=error)
+
+
+@router.delete("/club-posts/{post_id}/likes", response_model=SuccessResponse)
+def unlike_club_post(
+    post_id: str,
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    success, error = social_service.unlike(db, athlete.id, "club_post", post_id)
+    return SuccessResponse(success=success, error_message=error)
+
+
+@router.get("/club-posts/{post_id}/comments", response_model=PaginatedCommentsResponse)
+def club_post_comments(
+    post_id: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    stmt = social_service.list_comments(db, "club_post", post_id)
+    return _comments_response(db, athlete, stmt, page, per_page)
+
+
+@router.post("/club-posts/{post_id}/comments")
+def create_club_post_comment(
+    post_id: str,
+    text: str = Query(...),
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    comment = social_service.add_comment(db, athlete.id, "club_post", post_id, text)
+    return {"comment": comment, "success": True}
+
+
+@router.patch("/club-posts/{post_id}/comments/{comment_id}", response_model=SuccessResponse)
+def edit_club_post_comment(
+    post_id: str,
+    comment_id: str,
+    text: str = Query(...),
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    comment = db.get(CommentModel, comment_id)
+    if not comment or comment.author_id != athlete.id or comment.target_id != post_id:
+        return SuccessResponse(success=False, error_message="Comment not found")
+    comment.text = text
+    db.commit()
+    return SuccessResponse(success=True)
+
+
+@router.delete("/club-posts/{post_id}/comments/{comment_id}", response_model=SuccessResponse)
+def delete_club_post_comment(
+    post_id: str,
+    comment_id: str,
+    athlete: Athlete = Depends(get_current_athlete),
+    db: Session = Depends(get_db),
+):
+    comment = db.get(CommentModel, comment_id)
+    if not comment or comment.author_id != athlete.id:
+        return SuccessResponse(success=False, error_message="Comment not found")
+    db.delete(comment)
+    db.commit()
+    return SuccessResponse(success=True)
 
 
 @router.get("/athlete/feed", response_model=CursorPaginatedFeedResponse)
@@ -134,7 +332,7 @@ def athlete_feed(
     viewer: Athlete = Depends(get_current_athlete),
     db: Session = Depends(get_db),
 ):
-    items, next_cursor = feed_service.get_feed(db, [athlete_id], cursor, limit, viewer.id)
+    items, next_cursor = feed_service.get_athlete_profile_feed(db, athlete_id, cursor, limit, viewer.id)
     return CursorPaginatedFeedResponse(next_cursor=next_cursor, items=items)
 
 
@@ -235,6 +433,18 @@ def relationship(
     db: Session = Depends(get_db),
 ):
     return {"status": social_service.relationship_status(db, athlete.id, athlete_id)}
+
+
+@router.get("/comments/{comment_id}/likes", response_model=PaginatedAthletesResponse)
+def comment_likers(
+    comment_id: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    stmt = social_service.list_likers(db, "comment", comment_id)
+    items, pagination = paginate_offset(db, stmt, page, per_page)
+    return PaginatedAthletesResponse(pagination=pagination, items=[to_summary(a) for a in items])
 
 
 @router.post("/comments/{comment_id}/likes", response_model=SuccessResponse)

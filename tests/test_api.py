@@ -106,3 +106,79 @@ def test_create_club(client):
     assert resp.status_code == 200
     assert resp.json()["success"] is True
     assert resp.json()["club"]["name"] == "Boston Runners"
+
+
+def test_post_like_flow(client):
+    user = signup_and_login(client, "postuser", "postuser@example.com")
+    resp = client.post(
+        f"/athletes/{user['id']}/posts",
+        headers=user["headers"],
+        json={"text": "Hello, this is a test post!"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+    post_id = resp.json()["post"]["id"]
+
+    resp = client.get("/athlete/feed", headers=user["headers"])
+    assert resp.status_code == 200
+    feed_items = resp.json()["items"]
+    post_item = next(item for item in feed_items if item["id"] == post_id)
+    assert post_item["post_data"]["is_liked"] is False
+    assert post_item["post_data"]["like_count"] == 0
+
+    resp = client.post(f"/posts/{post_id}/likes", headers=user["headers"])
+    assert resp.status_code == 200
+    assert resp.json()["success"] is False
+    assert "cannot like your own" in resp.json()["error_message"].lower()
+
+    other = signup_and_login(client, "postliker", "postliker@example.com")
+    resp = client.post(f"/posts/{post_id}/likes", headers=other["headers"])
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+    resp = client.get("/athlete/feed", headers=user["headers"])
+    assert resp.status_code == 200
+    feed_items = resp.json()["items"]
+    post_item = next(item for item in feed_items if item["id"] == post_id)
+    assert post_item["post_data"]["is_liked"] is False
+    assert post_item["post_data"]["like_count"] == 1
+
+    resp = client.delete(f"/posts/{post_id}/likes", headers=other["headers"])
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+    resp = client.get("/athlete/feed", headers=user["headers"])
+    assert resp.status_code == 200
+    feed_items = resp.json()["items"]
+    post_item = next(item for item in feed_items if item["id"] == post_id)
+    assert post_item["post_data"]["is_liked"] is False
+    assert post_item["post_data"]["like_count"] == 0
+
+
+def test_cannot_like_own_activity(client):
+    from tests.helpers import create_manual_activity
+
+    user = signup_and_login(client, "selflikeact", "selflikeact@example.com")
+    act_id = create_manual_activity(client, user["headers"], "Solo Run")
+    resp = client.post(f"/activities/{act_id}/likes", headers=user["headers"])
+    assert resp.status_code == 200
+    assert resp.json()["success"] is False
+    assert "cannot like your own" in resp.json()["error_message"].lower()
+
+
+def test_cannot_like_own_comment(client):
+    from tests.helpers import create_manual_activity
+
+    owner = signup_and_login(client, "commentowner", "commentowner@example.com")
+    other = signup_and_login(client, "commentliker", "commentliker@example.com")
+    act_id = create_manual_activity(client, owner["headers"], "Group Run")
+    comment_resp = client.post(
+        f"/activities/{act_id}/comments",
+        headers=other["headers"],
+        params={"text": "Nice run"},
+    )
+    comment_id = comment_resp.json()["comment"]["id"]
+    resp = client.post(f"/comments/{comment_id}/likes", headers=other["headers"])
+    assert resp.status_code == 200
+    assert resp.json()["success"] is False
+    assert "cannot like your own" in resp.json()["error_message"].lower()

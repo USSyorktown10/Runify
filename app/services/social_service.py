@@ -1,9 +1,9 @@
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.errors import ConflictError
 from app.models.athlete import Athlete, AthletePreferences
-from app.models.social import AthletePost, Block, Comment, Follow, Like
+from app.models.social import AthletePost, Block, ClubPost, Comment, Follow, Like
 from app.schemas.social import AthletePost as AthletePostSchema
 from app.schemas.social import Comment as CommentSchema
 from app.services.athlete_service import to_summary
@@ -131,6 +131,17 @@ class SocialService:
             post = db.get(AthletePost, target_id)
             if post:
                 post.comment_count += 1
+                notification_service.create(
+                    db,
+                    post.athlete_id,
+                    "post_comment",
+                    author_id,
+                    {"post_id": target_id, "comment_id": comment.id},
+                )
+        elif target_type == "club_post":
+            club_post = db.get(ClubPost, target_id)
+            if club_post:
+                club_post.comment_count += 1
         author = db.get(Athlete, author_id)
         db.commit()
         return CommentSchema(
@@ -142,7 +153,28 @@ class SocialService:
             is_liked=False,
         )
 
+    def _content_owner_id(self, db: Session, target_type: str, target_id: str) -> str | None:
+        if target_type == "activity":
+            from app.models.activity import Activity
+            activity = db.get(Activity, target_id)
+            return activity.athlete_id if activity else None
+        if target_type == "post":
+            post = db.get(AthletePost, target_id)
+            return post.athlete_id if post else None
+        if target_type == "club_post":
+            club_post = db.get(ClubPost, target_id)
+            return club_post.author_id if club_post else None
+        if target_type == "comment":
+            comment = db.get(Comment, target_id)
+            return comment.author_id if comment else None
+        return None
+
     def like(self, db: Session, athlete_id: str, target_type: str, target_id: str) -> tuple[bool, str | None]:
+        owner_id = self._content_owner_id(db, target_type, target_id)
+        if owner_id is None:
+            return False, "Content not found"
+        if owner_id == athlete_id:
+            return False, "You cannot like your own content"
         existing = db.scalar(
             select(Like).where(
                 Like.athlete_id == athlete_id,
@@ -165,6 +197,13 @@ class SocialService:
             post = db.get(AthletePost, target_id)
             if post:
                 post.like_count += 1
+                notification_service.create(
+                    db, post.athlete_id, "post_like", athlete_id, {"post_id": target_id}
+                )
+        elif target_type == "club_post":
+            club_post = db.get(ClubPost, target_id)
+            if club_post:
+                club_post.like_count += 1
         elif target_type == "comment":
             comment = db.get(Comment, target_id)
             if comment:
@@ -191,6 +230,10 @@ class SocialService:
             post = db.get(AthletePost, target_id)
             if post and post.like_count > 0:
                 post.like_count -= 1
+        elif target_type == "club_post":
+            club_post = db.get(ClubPost, target_id)
+            if club_post and club_post.like_count > 0:
+                club_post.like_count -= 1
         elif target_type == "comment":
             comment = db.get(Comment, target_id)
             if comment and comment.like_count > 0:
@@ -198,6 +241,31 @@ class SocialService:
         db.delete(like)
         db.commit()
         return True, None
+
+    def comment_like_counts(self, db: Session, comment_ids: list[str]) -> dict[str, int]:
+        if not comment_ids:
+            return {}
+        rows = db.execute(
+            select(Like.target_id, func.count())
+            .where(Like.target_type == "comment", Like.target_id.in_(comment_ids))
+            .group_by(Like.target_id)
+        ).all()
+        return {target_id: count for target_id, count in rows}
+
+    def list_likers(self, db: Session, target_type: str, target_id: str):
+        return (
+            select(Athlete)
+            .join(Like, Like.athlete_id == Athlete.id)
+            .where(Like.target_type == target_type, Like.target_id == target_id)
+            .order_by(Like.created_at.desc())
+        )
+
+    def list_comments(self, db: Session, target_type: str, target_id: str):
+        return (
+            select(Comment)
+            .where(Comment.target_type == target_type, Comment.target_id == target_id)
+            .order_by(Comment.created_at.desc())
+        )
 
     def create_post(self, db: Session, athlete_id: str, text: str, media_urls: list[str] | None) -> AthletePostSchema:
         post = AthletePost(athlete_id=athlete_id, text=text, media_urls=media_urls or [])

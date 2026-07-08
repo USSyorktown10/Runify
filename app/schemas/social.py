@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 from app.schemas.activity import SummaryActivity
 from app.schemas.athlete import SummaryAthlete
+from app.schemas.club import SummaryClub
 from app.schemas.common import PaginatedResponseMetadata
 
 
@@ -28,10 +29,14 @@ class AthletePost(BaseModel):
 class Post(BaseModel):
     id: str
     club_id: str
+    club: SummaryClub
     author: SummaryAthlete
     title: str
     body: str
     created_at: str
+    like_count: int
+    comment_count: int
+    is_liked: bool
 
 
 class CreateAthletePostRequest(BaseModel):
@@ -67,3 +72,8 @@ class PaginatedCommentsResponse(BaseModel):
 class PaginatedAthletesResponse(BaseModel):
     pagination: PaginatedResponseMetadata
     items: list[SummaryAthlete]
+
+
+class PaginatedPostsResponse(BaseModel):
+    pagination: PaginatedResponseMetadata
+    items: list[Post]
