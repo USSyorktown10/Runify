@@ -2,7 +2,7 @@
 import os
 import httpx
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 import app.models.activity
@@ -19,24 +19,43 @@ engine = create_engine(DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-@pytest.fixture(autouse=True)
-def setup_db(db):
+@pytest.fixture(scope="session", autouse=True)
+def ensure_schema():
+    """Ensure the schema exists once for the entire test session."""
     sync_schema()
-
-    # Delete all data from tables in reversed order of dependency to prevent foreign key issues
-    for table in reversed(Base.metadata.sorted_tables):
-        db.execute(table.delete())
-    db.commit()
-    yield
 
 
 @pytest.fixture
 def db():
-    session = TestingSessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
+    """
+    Provide a database session that is rolled back after each test.
+
+    Uses a transaction + SAVEPOINT so all writes are undone without touching
+    real data — the outer transaction is never committed.
+    """
+    connection = engine.connect()
+    transaction = connection.begin()
+
+    # Bind a session to the open connection so it shares the same transaction
+    session = TestingSessionLocal(bind=connection)
+
+    # Postgres requires a SAVEPOINT for nested rollbacks when using
+    # begin_nested() so the ORM can roll back to the savepoint after flush
+    # errors without killing the outer transaction.
+    nested = connection.begin_nested()
+
+    # Re-open the savepoint whenever the ORM session expires it (e.g. after commit)
+    @event.listens_for(session, "after_transaction_end")
+    def restart_savepoint(sess, trans):
+        nonlocal nested
+        if not nested.is_active:
+            nested = connection.begin_nested()
+
+    yield session
+
+    session.close()
+    transaction.rollback()
+    connection.close()
 
 
 @pytest.fixture
@@ -45,4 +64,3 @@ def client():
     base_url = os.getenv("TEST_SERVER_URL", "http://localhost:8000")
     with httpx.Client(base_url=base_url, follow_redirects=True) as c:
         yield c
-
