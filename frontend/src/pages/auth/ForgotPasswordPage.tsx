@@ -35,7 +35,7 @@ export function ForgotPasswordPage() {
       <h1 className="title mb-8 text-2xl">Forgot password</h1>
       <form onSubmit={submit} className="space-y-4">
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Email</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Email</label>
           <input className="field-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
         {error && <p className="text-red-500">{error}</p>}

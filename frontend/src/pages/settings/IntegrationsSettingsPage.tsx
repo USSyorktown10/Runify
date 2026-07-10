@@ -32,7 +32,7 @@ export function IntegrationsSettingsPage() {
         {PROVIDERS.map((p) => {
           const status = integrations?.find((i) => i.provider === p);
           return (
-            <li key={p} className="card flex justify-between items-center capitalize">
+            <li key={p} className="card flex justify-between items-center ">
               <span>{p.replace("_", " ")}</span>
               {status?.is_connected ? (
                 <button type="button" className="btn-secondary text-sm" onClick={() => disconnect.mutate(p)}>

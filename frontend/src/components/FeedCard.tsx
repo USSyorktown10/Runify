@@ -157,15 +157,15 @@ export function ActivityCard({
 
           <div className="grid grid-cols-3 gap-2 border-t border-b border-border/40 py-2 mt-2 text-xs">
             <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider font-semibold">Distance</span>
+              <span className="text-muted block text-[10px]  tracking-wider font-semibold">Distance</span>
               <span className="font-semibold text-sm tabular-nums">{distance(activity.distance)}</span>
             </div>
             <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider font-semibold">{paceLabel}</span>
+              <span className="text-muted block text-[10px]  tracking-wider font-semibold">{paceLabel}</span>
               <span className="font-semibold text-sm tabular-nums">{formattedPace}</span>
             </div>
             <div>
-              <span className="text-muted block text-[10px] uppercase tracking-wider font-semibold font-mono">Time</span>
+              <span className="text-muted block text-[10px]  tracking-wider font-semibold font-mono">Time</span>
               <span className="font-semibold text-sm tabular-nums">{formatFeedDuration(activity.moving_time)}</span>
             </div>
           </div>
@@ -182,7 +182,7 @@ export function ActivityCard({
         <div className="mt-3 relative border border-border overflow-hidden group">
           <Link to={`/activities/${activity.id}`} className="block h-48 w-full hover:opacity-95 transition-opacity">
             <MapView polyline={activity.polyline_summary} className="h-full w-full pointer-events-none" interactive={false} />
-            <div className="absolute top-2 right-2 bg-surface/90 border border-border px-2 py-0.5 text-[10px] font-semibold text-muted tracking-wider uppercase backdrop-blur-sm shadow-sm">
+            <div className="absolute top-2 right-2 bg-surface/90 border border-border px-2 py-0.5 text-[10px] font-semibold text-muted tracking-wider  backdrop-blur-sm shadow-sm">
               View Route
             </div>
           </Link>

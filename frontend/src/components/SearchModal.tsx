@@ -45,7 +45,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
             <button
               key={t}
               type="button"
-              className={`text-sm font-semibold capitalize ${tab === t ? "text-accent underline" : "text-muted"}`}
+              className={`text-sm font-semibold  ${tab === t ? "text-accent underline" : "text-muted"}`}
               onClick={() => setTab(t)}
             >
               {t}

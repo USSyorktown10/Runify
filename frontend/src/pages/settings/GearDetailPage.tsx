@@ -39,7 +39,7 @@ export function GearDetailPage() {
         }}
       >
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Name</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Name</label>
           <input className="field-input" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <p className="text-muted text-sm">

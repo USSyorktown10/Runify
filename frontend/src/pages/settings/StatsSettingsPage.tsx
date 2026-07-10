@@ -29,11 +29,11 @@ export function StatsSettingsPage() {
         }}
       >
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">FTP (watts)</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">FTP (watts)</label>
           <input className="field-input" type="number" value={ftp} onChange={(e) => setFtp(e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Threshold pace (m/s)</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Threshold pace (m/s)</label>
           <input className="field-input" type="number" step="0.01" value={pace} onChange={(e) => setPace(e.target.value)} />
         </div>
         {saved && <p className="text-accent">Saved.</p>}

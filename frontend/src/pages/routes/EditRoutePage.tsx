@@ -32,11 +32,11 @@ export function EditRoutePage() {
       <h1 className="title mb-8">Edit route</h1>
       <form onSubmit={submit} className="space-y-4 max-w-md">
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Name</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Name</label>
           <input className="field-input" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Description</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Description</label>
           <textarea className="field-input min-h-24" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
         <button type="submit" className="btn-primary">

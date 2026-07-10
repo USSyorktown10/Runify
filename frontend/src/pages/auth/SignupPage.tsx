@@ -41,15 +41,15 @@ export function SignupPage() {
       <h1 className="title mb-8 text-2xl">Sign up</h1>
       <form onSubmit={submit} className="space-y-4">
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Username</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Username</label>
           <input className="field-input" value={username} onChange={(e) => setUsername(e.target.value)} required />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Email</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Email</label>
           <input className="field-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Password</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Password</label>
           <input
             className="field-input"
             type="password"

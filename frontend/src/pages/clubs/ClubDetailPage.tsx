@@ -41,7 +41,7 @@ function ClubTab({
     <button
       type="button"
       onClick={onClick}
-      className={`border-b-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors ${
+      className={`border-b-2 px-3 py-2 text-xs font-semibold  tracking-wider transition-colors ${
         active ? "border-accent text-accent" : "border-transparent text-muted hover:text-accent"
       }`}
     >
@@ -155,7 +155,7 @@ export function ClubDetailPage() {
                 {sportTag && (
                   <>
                     {" "}
-                    · <span className="capitalize">{sportTag}</span>
+                    · <span className="">{sportTag}</span>
                   </>
                 )}
                 {club.is_private && " · Private"}

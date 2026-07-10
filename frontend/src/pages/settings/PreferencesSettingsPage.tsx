@@ -19,7 +19,7 @@ export function PreferencesSettingsPage() {
       <h1 className="title mb-8">Preferences</h1>
       <div className="space-y-6 max-w-md">
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Units</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Units</label>
           <select
             className="field-input"
             value={prefs.measurement_system}
@@ -30,7 +30,7 @@ export function PreferencesSettingsPage() {
           </select>
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Theme</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Theme</label>
           <select
             className="field-input"
             value={prefs.theme}
@@ -42,10 +42,10 @@ export function PreferencesSettingsPage() {
           </select>
         </div>
         <fieldset>
-          <legend className="text-xs text-muted font-semibold uppercase mb-2">Privacy defaults</legend>
+          <legend className="text-xs text-muted font-semibold  mb-2">Privacy defaults</legend>
           {(["profile_visibility", "activity_visibility", "biometrics_visibility"] as const).map((key) => (
             <div key={key} className="mb-3">
-              <label className="block text-sm mb-1 capitalize">{key.replace(/_/g, " ")}</label>
+              <label className="block text-sm mb-1 ">{key.replace(/_/g, " ")}</label>
               <select
                 className="field-input"
                 value={prefs.privacy_settings[key]}
@@ -63,9 +63,9 @@ export function PreferencesSettingsPage() {
           ))}
         </fieldset>
         <fieldset>
-          <legend className="text-xs text-muted font-semibold uppercase mb-2">Email notifications</legend>
+          <legend className="text-xs text-muted font-semibold  mb-2">Email notifications</legend>
           {(["comments", "likes", "follow_requests", "club_invites"] as const).map((key) => (
-            <label key={key} className="flex items-center gap-2 mb-2 capitalize">
+            <label key={key} className="flex items-center gap-2 mb-2 ">
               <input
                 type="checkbox"
                 checked={prefs.email_notifications[key]}

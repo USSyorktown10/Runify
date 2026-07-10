@@ -1,9 +1,9 @@
 export function formatDistance(meters: number, system: "metric" | "imperial" = "metric"): string {
   if (system === "imperial") {
     const miles = meters / 1609.344;
-    return miles >= 0.1 ? `${miles.toFixed(2)} mi` : `${(meters * 3.28084).toFixed(0)} ft`;
+    return miles >= 0.1 ? `${miles.toFixed(1)} mi` : `${(meters * 3.28084).toFixed(0)} ft`;
   }
-  if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`;
+  if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;
   return `${meters.toFixed(0)} m`;
 }
 

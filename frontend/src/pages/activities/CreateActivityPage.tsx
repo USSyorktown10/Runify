@@ -38,23 +38,23 @@ export function CreateActivityPage() {
       <h1 className="title mb-8">New activity</h1>
       <form onSubmit={submit} className="space-y-4 max-w-md">
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Name</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Name</label>
           <input className="field-input" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Start</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Start</label>
           <input className="field-input" type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Distance (km)</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Distance (km)</label>
           <input className="field-input" type="number" step="0.01" value={distance} onChange={(e) => setDistance(e.target.value)} required />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Duration (minutes)</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Duration (minutes)</label>
           <input className="field-input" type="number" value={elapsedTime} onChange={(e) => setElapsedTime(e.target.value)} required />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Description</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Description</label>
           <textarea className="field-input min-h-24" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
         {error && <p className="text-red-500">{error}</p>}

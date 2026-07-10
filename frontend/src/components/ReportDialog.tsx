@@ -51,9 +51,9 @@ export function ReportDialog({
           <p className="text-accent mb-4">Thank you. Your report has been submitted.</p>
         ) : (
           <>
-            <label className="block text-xs text-muted font-semibold uppercase mb-1">Reason</label>
+            <label className="block text-xs text-muted font-semibold  mb-1">Reason</label>
             <input className="field-input mb-3" value={reason} onChange={(e) => setReason(e.target.value)} />
-            <label className="block text-xs text-muted font-semibold uppercase mb-1">Details</label>
+            <label className="block text-xs text-muted font-semibold  mb-1">Details</label>
             <textarea
               className="field-input mb-3 min-h-24"
               value={details}

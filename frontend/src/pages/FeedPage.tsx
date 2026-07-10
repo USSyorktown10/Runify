@@ -113,19 +113,19 @@ export function FeedPage() {
                   <span className="block font-semibold text-sm group-hover:text-accent transition-colors">
                     {following?.pagination.total_items ?? 0}
                   </span>
-                  <span className="text-[10px] text-muted uppercase tracking-wider">Following</span>
+                  <span className="text-[10px] text-muted  tracking-wider">Following</span>
                 </Link>
                 <Link to={`/athletes/${user.id}?tab=followers`} className="hover:text-accent group py-0.5">
                   <span className="block font-semibold text-sm group-hover:text-accent transition-colors">
                     {followers?.pagination.total_items ?? 0}
                   </span>
-                  <span className="text-[10px] text-muted uppercase tracking-wider">Followers</span>
+                  <span className="text-[10px] text-muted  tracking-wider">Followers</span>
                 </Link>
                 <Link to="/routes" className="hover:text-accent group py-0.5">
                   <span className="block font-semibold text-sm group-hover:text-accent transition-colors">
                     {routes?.pagination.total_items ?? 0}
                   </span>
-                  <span className="text-[10px] text-muted uppercase tracking-wider">Routes</span>
+                  <span className="text-[10px] text-muted  tracking-wider">Routes</span>
                 </Link>
               </div>
             </div>
@@ -183,25 +183,25 @@ export function FeedPage() {
             ) : athlete ? (
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <span className="text-muted block text-[10px] uppercase tracking-wider">YTD Distance</span>
+                  <span className="text-muted block text-[10px]  tracking-wider">YTD Distance</span>
                   <span className="font-semibold text-sm tabular-nums">
                     {distance(athlete.stats.ytd_run_totals)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted block text-[10px] uppercase tracking-wider">All-Time Run</span>
+                  <span className="text-muted block text-[10px]  tracking-wider">All-Time Run</span>
                   <span className="font-semibold text-sm tabular-nums">
                     {distance(athlete.stats.all_time_run_totals)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted block text-[10px] uppercase tracking-wider">Current FTP</span>
+                  <span className="text-muted block text-[10px]  tracking-wider">Current FTP</span>
                   <span className="font-semibold text-sm tabular-nums">
                     {athlete.stats.current_ftp > 0 ? `${athlete.stats.current_ftp} W` : "—"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted block text-[10px] uppercase tracking-wider">Threshold Pace</span>
+                  <span className="text-muted block text-[10px]  tracking-wider">Threshold Pace</span>
                   <span className="font-semibold text-sm tabular-nums">
                     {pace(athlete.stats.threshold_pace)}
                   </span>
@@ -214,7 +214,7 @@ export function FeedPage() {
             {/* Personal Records summary */}
             {athlete && athlete.personal_records.length > 0 && (
               <div className="border-t border-border pt-2 mt-1">
-                <h4 className="text-[10px] uppercase text-muted tracking-wider mb-2 font-semibold">Personal Records</h4>
+                <h4 className="text-[10px]  text-muted tracking-wider mb-2 font-semibold">Personal Records</h4>
                 <ul className="space-y-1">
                   {athlete.personal_records.slice(0, 3).map((pr) => (
                     <li key={pr.distance_name} className="flex justify-between text-xs">
@@ -274,7 +274,7 @@ export function FeedPage() {
                 const isConnected = integrations?.find((i) => i.provider === p)?.is_connected;
                 return (
                   <div key={p} className="flex justify-between items-center py-0.5">
-                    <span className="capitalize text-muted">{p.replace("_", " ")}</span>
+                    <span className=" text-muted">{p.replace("_", " ")}</span>
                     {isConnected ? (
                       <span className="inline-flex items-center gap-1 text-accent font-semibold text-[11px]">
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />

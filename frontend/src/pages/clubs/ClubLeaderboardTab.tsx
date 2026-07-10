@@ -40,7 +40,7 @@ export function ClubLeaderboardTab({ clubId }: { clubId: string }) {
         <div className="flex gap-1">
           <button
             type="button"
-            className={`text-xs font-semibold uppercase px-3 py-1.5 border ${
+            className={`text-xs font-semibold  px-3 py-1.5 border ${
               period === "this_week" ? "border-accent text-accent" : "border-border text-muted"
             }`}
             onClick={() => {
@@ -52,7 +52,7 @@ export function ClubLeaderboardTab({ clubId }: { clubId: string }) {
           </button>
           <button
             type="button"
-            className={`text-xs font-semibold uppercase px-3 py-1.5 border ${
+            className={`text-xs font-semibold  px-3 py-1.5 border ${
               period === "last_week" ? "border-accent text-accent" : "border-border text-muted"
             }`}
             onClick={() => {
@@ -81,7 +81,7 @@ export function ClubLeaderboardTab({ clubId }: { clubId: string }) {
 
       {data?.viewer_summary && (
         <div className="card mb-4 text-sm">
-          <p className="text-muted text-xs uppercase font-semibold mb-1">Your stats</p>
+          <p className="text-muted text-xs  font-semibold mb-1">Your stats</p>
           <div className="flex flex-wrap gap-4">
             <span>
               Rank: <strong>{data.viewer_summary.rank ?? "—"}</strong>

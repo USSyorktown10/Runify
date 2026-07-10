@@ -4,56 +4,51 @@
   --color-global-bg: var(--global-bg);
   --color-global-text: var(--global-text);
   --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
   --color-muted: var(--muted);
   --color-link: var(--link);
   --color-highlight: var(--highlight);
   --color-surface: var(--surface);
   --color-border: var(--border);
-  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --color-quote: var(--quote);
+  --font-sans: var(--font-mono);
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius-full: 0px;
+  --radius-3xl: 0px;
+  --radius-2xl: 0px;
+  --radius-xl: 0px;
+  --radius-lg: 0px;
+  --radius-md: 0px;
+  --radius-sm: 0px;
+  --radius-xs: 0px;
 }
 
 :root,
 [data-theme="light"] {
-  --global-bg: #f8fafc;
-  --global-text: #0f172a;
-  --surface: #ffffff;
-  --border: #e2e8f0;
-  --accent: #0ea5e9;
-  --muted: #64748b;
-  --link: #0ea5e9;
-  --highlight: #ea580c;
-  --phrase-further: #10b981;
-  --phrase-more: #4f46e5;
-  --phrase-efficiently: #7c3aed;
-  --phrase-smarter: #0ea5e9;
-  --phrase-together: #db2777;
-  --phrase-faster: #f97316;
-  --phrase-stronger: #ef4444;
-  --phrase-longer: #d97706;
-  --phrase-happier: #84cc16;
-  --phrase-runify: #10b981;
+  --global-bg: oklch(98.48% 0 0);
+  --global-text: oklch(26.99% .0096 235.05);
+  --surface: transparent;
+  --border: rgb(212, 212, 216); /* zinc-300 */
+  --accent: oklch(50.2% .27 29);
+  --accent-2: oklch(18.15% 0 0);
+  --muted: #71717a; /* zinc-500 */
+  --link: oklch(55.44% .0431 185.69);
+  --highlight: oklch(50.2% .27 29);
+  --quote: oklch(55.27% .195 19.06);
 }
 
-[data-theme="dark"] {
-  --global-bg: #090d16;
-  --global-text: #f8fafc;
-  --surface: #121826;
-  --border: #1e293b;
-  --accent: #10b981;
-  --muted: #94a3b8;
-  --link: #10b981;
-  --highlight: #ff7a00;
-  --phrase-further: #34d399;
-  --phrase-more: #818cf8;
-  --phrase-efficiently: #a78bfa;
-  --phrase-smarter: #22d3ee;
-  --phrase-together: #f472b6;
-  --phrase-faster: #ff7e5f;
-  --phrase-stronger: #f87171;
-  --phrase-longer: #fbbf24;
-  --phrase-happier: #a3e635;
-  --phrase-runify: #34d399;
+[data-theme="dark"],
+.dark {
+  --global-bg: oklch(23.64% .0045 248);
+  --global-text: oklch(83.54% 0 264);
+  --surface: transparent;
+  --border: rgb(63, 63, 70); /* zinc-700 */
+  --accent: oklch(73.5% .22 199);
+  --accent-2: oklch(94.66% 0 0);
+  --muted: #a1a1aa; /* zinc-400 */
+  --link: oklch(70.44% .1133 349);
+  --highlight: oklch(73.5% .22 199);
+  --quote: oklch(94.8% .106 136.49);
 }
 
 @layer base {
@@ -61,15 +56,34 @@
     scroll-behavior: smooth;
   }
 
+  /* Selection colors from the portfolio */
+  ::selection {
+    background-color: rgb(63, 63, 70) !important; /* zinc-700 */
+    color: #ffffff !important;
+  }
+  .dark ::selection {
+    background-color: rgb(212, 212, 216) !important; /* zinc-300 */
+    color: #09090b !important; /* zinc-950 */
+  }
+
+  /* Smooth transitions when switching themes */
+  html.theme-transitioning,
+  html.theme-transitioning body,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, text-decoration-color 0.3s ease !important;
+  }
+
   body {
-    @apply bg-global-bg text-global-text font-sans text-sm font-normal leading-relaxed;
+    @apply bg-global-bg text-global-text font-mono text-sm font-normal leading-relaxed antialiased relative overflow-x-hidden;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    @apply font-sans font-bold tracking-tight;
+    @apply font-mono font-bold tracking-tight text-accent-2;
   }
 
   code,
@@ -81,63 +95,67 @@
 
 @layer components {
   .display {
-    @apply font-sans text-3xl font-extrabold tracking-tight leading-tight sm:text-4xl;
+    @apply font-mono text-4xl font-bold tracking-tight leading-none sm:text-5xl lg:text-6xl text-accent-2;
   }
 
   .title {
-    @apply font-sans text-xl font-bold tracking-tight leading-tight sm:text-2xl;
+    @apply font-mono text-xl font-bold tracking-tight leading-tight sm:text-2xl text-accent;
   }
 
   .heading {
-    @apply font-sans text-lg font-bold tracking-tight leading-snug;
+    @apply font-mono text-base font-bold tracking-tight leading-snug text-accent-2;
   }
 
   .subheading {
-    @apply font-sans text-base font-semibold tracking-tight;
+    @apply font-mono text-sm font-bold tracking-tight text-accent-2;
   }
 
   .label {
-    @apply font-sans text-xs font-bold uppercase tracking-wider text-muted;
+    @apply font-mono text-[11px] font-semibold text-muted tracking-wider;
   }
 
   .stat {
-    @apply font-mono text-xl font-bold tracking-tight tabular-nums;
+    @apply font-mono text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-accent-2 leading-none;
   }
 
   .stat-label {
-    @apply font-sans text-[10px] font-bold uppercase tracking-widest text-muted;
+    @apply font-mono text-xs font-semibold text-muted tracking-wider;
   }
 
   .prose-runify {
-    @apply font-sans text-sm leading-relaxed text-global-text;
+    @apply font-mono text-sm leading-relaxed text-global-text;
   }
 
   .meta {
-    @apply font-sans text-xs text-muted;
+    @apply font-mono text-xs text-muted;
   }
 
   .cactus-link {
-    @apply text-accent font-medium underline-offset-2 hover:underline;
+    @apply text-link font-medium underline-offset-2 hover:underline;
   }
 
   .field-input {
-    @apply w-full rounded-lg border border-border bg-global-bg px-3 py-1.5 font-sans text-xs transition-all focus:border-accent focus:ring-2 focus:ring-accent/15 focus:outline-none;
+    @apply w-full rounded-none border border-border bg-transparent px-4 py-2 font-mono text-xs transition-all focus:border-accent focus:outline-none text-global-text placeholder-zinc-400 dark:placeholder-zinc-500;
   }
 
   .btn-primary {
-    @apply rounded-lg border border-accent bg-accent px-3 py-1.5 font-sans text-xs font-bold text-global-bg transition-all hover:brightness-110 active:scale-98 disabled:opacity-50;
+    @apply rounded-none border border-accent bg-transparent text-accent px-5 py-2 font-mono text-xs font-bold transition-all duration-200 hover:bg-accent hover:text-global-bg active:scale-95 disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply rounded-lg border border-border bg-surface px-3 py-1.5 font-sans text-xs font-semibold transition-all hover:border-accent hover:text-accent active:scale-98;
+    @apply rounded-none border border-border bg-transparent px-5 py-2 font-mono text-xs font-bold text-global-text transition-all duration-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95;
   }
 
   .card {
-    @apply rounded-xl border border-border bg-surface px-4 py-3 shadow-xs transition-all hover:shadow-sm;
+    @apply rounded-none border border-border bg-transparent px-6 py-5 transition-all duration-300 hover:border-accent;
+  }
+
+  .glassmorphism {
+    @apply bg-global-bg/85 backdrop-blur-md border border-border/50;
   }
 
   .page-header {
-    @apply mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3;
+    @apply mb-6 flex flex-wrap items-end justify-between gap-3 pb-3 border-b border-border/50;
   }
 
   .data-table {
@@ -145,11 +163,11 @@
   }
 
   .data-table th {
-    @apply border-b border-border px-2 py-2 text-left font-semibold uppercase text-muted;
+    @apply border-b border-border px-2 py-2 text-left font-semibold text-muted;
   }
 
   .data-table td {
-    @apply border-b border-border px-2 py-2 tabular-nums;
+    @apply border-b border-border px-2 py-2 tabular-nums font-semibold text-global-text;
   }
 
   @keyframes landing-marquee {

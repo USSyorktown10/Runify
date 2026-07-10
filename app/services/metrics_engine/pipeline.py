@@ -90,6 +90,12 @@ def process_upload(db: Session, upload: Upload, threshold_pace: float = 3.5, max
         else:
             times.append(max(points[i].time - points[i - 1].time, 0.5))
 
+    speeds_stream = [0.0]
+    for i in range(1, len(points)):
+        dist = (points[i].distance or 0) - (points[i - 1].distance or 0)
+        dt = points[i].time - points[i - 1].time
+        speeds_stream.append(dist / dt if dt > 0 else 0)
+
     stream_defs = {
         "lat": [p.lat for p in points if p.lat is not None],
         "lng": [p.lng for p in points if p.lng is not None],
@@ -98,6 +104,7 @@ def process_upload(db: Session, upload: Upload, threshold_pace: float = 3.5, max
         "cadence": [p.cadence for p in points if p.cadence is not None],
         "power": [p.power for p in points if p.power is not None],
         "distance": [p.distance for p in points if p.distance is not None],
+        "pace": speeds_stream,
     }
     axis_time = [p.time for p in points]
     axis_dist = [p.distance or 0 for p in points]

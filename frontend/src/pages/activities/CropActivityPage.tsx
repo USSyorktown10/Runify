@@ -30,11 +30,11 @@ export function CropActivityPage() {
       <p className="text-muted mb-6">Trim data points from the start or end of the activity stream.</p>
       <form onSubmit={submit} className="space-y-4 max-w-md">
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Start index</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Start index</label>
           <input className="field-input" type="number" value={startIndex} onChange={(e) => setStartIndex(+e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">End index</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">End index</label>
           <input className="field-input" type="number" value={endIndex} onChange={(e) => setEndIndex(+e.target.value)} />
         </div>
         {error && <p className="text-red-500">{error}</p>}

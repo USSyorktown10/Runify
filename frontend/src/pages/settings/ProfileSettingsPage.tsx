@@ -43,15 +43,15 @@ export function ProfileSettingsPage() {
         }}
       >
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">First name</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">First name</label>
           <input className="field-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Last name</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Last name</label>
           <input className="field-input" value={lastName} onChange={(e) => setLastName(e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">City</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">City</label>
           <input className="field-input" value={city} onChange={(e) => setCity(e.target.value)} />
         </div>
         {saved && <p className="text-accent">Saved.</p>}

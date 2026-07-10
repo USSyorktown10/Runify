@@ -45,7 +45,7 @@ function ProfileTab({
     <button
       type="button"
       onClick={onClick}
-      className={`border-b-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors ${
+      className={`border-b-2 px-3 py-2 text-xs font-semibold  tracking-wider transition-colors ${
         active
           ? "border-accent text-accent"
           : "border-transparent text-muted hover:text-accent"
@@ -158,15 +158,15 @@ export function AthleteProfilePage() {
             <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-3">
               <div>
                 <div className="text-xl font-semibold tabular-nums">{distance(athlete.stats.ytd_run_totals)}</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted mt-0.5">YTD Distance</div>
+                <div className="text-[10px]  tracking-wider text-muted mt-0.5">YTD Distance</div>
               </div>
               <div>
                 <div className="text-xl font-semibold tabular-nums">{distance(athlete.stats.all_time_run_totals)}</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted mt-0.5">All-Time Run</div>
+                <div className="text-[10px]  tracking-wider text-muted mt-0.5">All-Time Run</div>
               </div>
               <div className="col-span-2 sm:col-span-1">
                 <div className="text-xl font-semibold tabular-nums">{pace(athlete.stats.threshold_pace)}</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted mt-0.5">Threshold Pace</div>
+                <div className="text-[10px]  tracking-wider text-muted mt-0.5">Threshold Pace</div>
               </div>
             </div>
           </div>
@@ -298,7 +298,7 @@ export function AthleteProfilePage() {
 
             {athlete.personal_records.length > 0 && (
               <div className="border-t border-border mt-3 pt-3">
-                <h4 className="text-[10px] uppercase text-muted tracking-wider mb-2 font-semibold">Personal Records</h4>
+                <h4 className="text-[10px]  text-muted tracking-wider mb-2 font-semibold">Personal Records</h4>
                 <table className="data-table">
                   <tbody>
                     {athlete.personal_records.map((pr) => (

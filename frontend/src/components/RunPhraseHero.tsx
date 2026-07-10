@@ -3,7 +3,7 @@ import { useState, useEffect, type CSSProperties } from "react";
 export type PhraseVariant =
   | "stretch"
   | "larger"
-  | "uppercase"
+  | ""
   | "underline"
   | "duplicate"
   | "italic"
@@ -21,7 +21,7 @@ export type RunPhraseConfig = {
 export const RUN_PHRASES: RunPhraseConfig[] = [
   { word: "further", variant: "stretch", color: "var(--phrase-further)" },
   { word: "more", variant: "larger", color: "var(--phrase-more)" },
-  { word: "efficiently", variant: "uppercase", color: "var(--phrase-efficiently)" },
+  { word: "efficiently", variant: "", color: "var(--phrase-efficiently)" },
   { word: "smarter", variant: "underline", color: "var(--phrase-smarter)" },
   { word: "together", variant: "duplicate", color: "var(--phrase-together)" },
   { word: "faster", variant: "italic", color: "var(--phrase-faster)" },
@@ -97,9 +97,9 @@ function StyledWord({
           {word}
         </WordSuffix>
       );
-    case "uppercase":
+    case "":
       return (
-        <WordSuffix tone={tone} wordClassName="uppercase tracking-[0.18em]" hidePeriod={hidePeriod}>
+        <WordSuffix tone={tone} wordClassName=" tracking-[0.18em]" hidePeriod={hidePeriod}>
           {word}
         </WordSuffix>
       );

@@ -48,7 +48,7 @@ export function ResetPasswordPage() {
       <h1 className="title mb-8 text-2xl">Reset password</h1>
       <form onSubmit={submit} className="space-y-4">
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">New password</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">New password</label>
           <input
             className="field-input"
             type="password"

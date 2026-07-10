@@ -30,11 +30,11 @@ export function CreateRoutePage() {
       <h1 className="title mb-8">New route</h1>
       <form onSubmit={submit} className="space-y-4 max-w-md">
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">Name</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">Name</label>
           <input className="field-input" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
         <div>
-          <label className="block text-xs text-muted font-semibold uppercase mb-1">From activity ID (optional)</label>
+          <label className="block text-xs text-muted font-semibold  mb-1">From activity ID (optional)</label>
           <input className="field-input" value={activityId} onChange={(e) => setActivityId(e.target.value)} />
         </div>
         {error && <p className="text-red-500">{error}</p>}
