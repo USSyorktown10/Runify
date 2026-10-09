@@ -1,0 +1,38 @@
+.text-global-text {
+    font-size: 2.5rem;
+    color: var(--global-text);
+    font-family: var(--font-sans)
+}
+
+.phrase-stretch {
+   font-size: 2.5rem;
+   letter-spacing: 0.3rem;
+   text-transform: uppercase;
+   font-weight: bold;
+   color: var(--quote);
+}
+
+.phrase-underline {
+    font-size: 2.5rem;
+    text-decoration: underline;
+    font-style: italic;
+    color: var(--global-text);
+}
+
+.phrase-larger {
+    font-size: 3rem;
+    text-decoration: bold;
+    color: var(--global-text);
+}
+
+.phrase-highlight {
+    font-size: 2.5rem;
+    color: var(--quote);
+}
+
+.phrase-heavy {
+    text-decoration: bold;
+    font-style: bold;
+    color: var(--global-text);
+}
+

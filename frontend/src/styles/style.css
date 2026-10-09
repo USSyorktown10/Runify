@@ -1,0 +1,54 @@
+:root {
+  --font-sans: 'Avenir Next', 'Helvetica Neue', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --global-bg: oklch(23.64% .0045 248);
+  --global-text: oklch(83.54% 0 264);
+  --surface: transparent;
+  --border: rgb(63, 63, 70); /* zinc-700 */
+  --accent: oklch(73.5% .22 199);
+  --accent-2: oklch(94.66% 0 0);
+  --muted: #a1a1aa; /* zinc-400 */
+  --link: oklch(70.44% .1133 349);
+  --highlight: oklch(73.5% .22 199);
+  --quote: oklch(94.8% .106 136.49);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--global-bg);
+  color: var(--global-text);
+  font-family: var(--font-mono);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: normal;
+}
+
+.landing-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--global-bg);
+}
+
+.landing-page h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.landing-page h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.landing-page p {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  max-width: 600px;
+}
