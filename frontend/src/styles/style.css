@@ -1,13 +1,16 @@
+
 :root {
   --font-sans: 'Avenir Next', 'Helvetica Neue', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --global-bg: oklch(23.64% .0045 248);
   --global-text: oklch(83.54% 0 264);
+  --primary-color: #10b981;
+  --secondary-color: #84cc16;
   --surface: transparent;
-  --border: rgb(63, 63, 70); /* zinc-700 */
+  --border: rgb(63, 63, 70);
   --accent: oklch(73.5% .22 199);
   --accent-2: oklch(94.66% 0 0);
-  --muted: #a1a1aa; /* zinc-400 */
+  --muted: #a1a1aa;
   --link: oklch(70.44% .1133 349);
   --highlight: oklch(73.5% .22 199);
   --quote: oklch(94.8% .106 136.49);
