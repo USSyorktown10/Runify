@@ -2,12 +2,12 @@
 :root {
   --font-sans: 'Avenir Next', 'Helvetica Neue', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --global-bg: oklch(23.64% .0045 248);
+  --global-bg: oklch(23.64% .0045 162.5);
   --global-text: oklch(83.54% 0 264);
-  --primary-color: #10b981;
-  --secondary-color: #84cc16;
-  --surface: transparent;
-  --border: rgb(63, 63, 70);
+  --primary-color: oklch(69.6% 0.149 162.5);
+  --secondary-color: oklch(76.84% 0.2688 128.03);
+  --surface: oklch(20% 0 162.5);
+  --border: oklch(50% 0 199);
   --accent: oklch(73.5% .22 199);
   --accent-2: oklch(94.66% 0 0);
   --muted: #a1a1aa;
@@ -30,28 +30,22 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: normal;
 }
 
-.landing-page {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background-color: var(--global-bg);
+.topo-bg {
+  width: 100%;
+  height: 100vh;
 }
 
-.landing-page h1 {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.landing-page h1 {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.landing-page p {
-  font-size: 1.25rem;
-  margin-bottom: 2rem;
+.container {
+  position: absolute;
+  width: min(100%, 420px);
+  min-height: 0;
+  margin: 0;
+  padding: 40px;
+  align-items: stretch;
+  gap: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(16px);
   text-align: center;
-  max-width: 600px;
 }

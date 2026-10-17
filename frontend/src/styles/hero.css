@@ -1,98 +1,118 @@
 .run-hero {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  width: 100%;
 }
 
 .text-global-text {
-    font-size: 2.5rem;
-    color: var(--global-text);
-    font-family: var(--font-sans)
+  color: var(--global-text);
 }
 
-.phrase-stretch {
-   font-size: 2.5rem;
-   letter-spacing: 0.3rem;
-   text-transform: uppercase;
-   font-weight: bold;
-   color: var(--quote);
+.phrase-stats {
+  color: var(--global-text);
 }
 
-.phrase-underline {
-    font-size: 2.5rem;
-    text-decoration: underline;
-    font-style: italic;
-    color: var(--global-text);
+.ambient-glow-layer {
+  position: absolute;
+  right: 0;
+  width: 160px;
+  height: 45px;
+  background: var(--primary-color);
+  opacity: 0;
+  will-change: opacity, filter;
+  filter: blur(28px); 
+  z-index: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
 }
 
-.phrase-larger {
-    font-size: 2.5rem;
-    text-decoration: bold;
-    color: var(--global-text);
-}
-
-.phrase-highlight {
-    font-size: 2.5rem;
-    color: var(--quote);
-}
-
-.phrase-heavy {
-    text-decoration: bold;
-    font-style: bold;
-    color: var(--global-text);
-}
-
-.phrase-italic {
-    font-size: 2.5rem;
-    font-style: italic;
-    color: var(--global-text);
-}
-
-.phrase-heavy {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: var(--global-text);
-}
-
-.phrase-spaced {
-    font-size: 2.5rem;
-    letter-spacing: 0.3rem;
-    color: var(--global-text);
-}
-
-.phrase-highlight {
-    font-size: 2.5rem;
-    color: var(--quote);
+.glow-active {
+  opacity: 0.4;
+  transition: opacity 0.7s ease-in-out;
+  transition-delay: 1.2s;
 }
 
 .phrase-runify {
-    font-size: 2.5rem;
-    font-family: var(--font-sans);
-    color: var(--global-text);
-}
-
-/* Container Layout */
-.phrase-cycler {
   display: inline-flex;
   align-items: center;
-  font-size: 2.5rem; /* Match your desired height */
-  line-height: 3rem; 
-  height: 2.5rem;
-  overflow: hidden;
+  justify-content: flex-start;
+  letter-spacing: normal;
+}
+
+.runify-letter {
+  display: inline-block;
+  text-align: center;
+  padding: 0 4px; 
+  font-weight: 400; 
+  color: var(--global-text);
+  transform: scale(1);
+  will-change: transform, font-weight, background-position;
+}
+
+.animate-wave .runify-letter {
+  background: linear-gradient(
+    90deg, 
+    var(--global-text) 0%, 
+    var(--global-text) 42%, 
+    var(--primary-color) 50%, 
+    var(--global-text) 58%, 
+    var(--global-text) 100%
+  );
+  background-size: 400% 100%;
+  background-position: 100% 0%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  animation: runify-clean-wave 1.6s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+  animation-delay: calc(var(--letter-index) * 0.07s);
+}
+
+@keyframes runify-clean-wave {
+  0% {
+    background-position: 100% 0%;
+    transform: scale(1);
+    font-weight: 400;
+    -webkit-text-fill-color: var(--global-text); 
+  }
+  35% {
+    background-position: 50% 0%;
+    transform: scale(1.22);
+    font-weight: 700;
+    -webkit-text-fill-color: transparent;
+  }
+  70%, 100% {
+    background-position: -300% 0%;
+    transform: scale(1);
+    font-weight: 400;
+    -webkit-text-fill-color: var(--global-text); 
+  }
+}
+
+.phrase-cycler {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  line-height: 3.5rem;
+  height: 3.5rem;
+  gap: 8px;
 }
 
 .cycler-prefix {
-  margin-right: 0.5rem;
+  margin-right: 0.2rem;
   white-space: nowrap;
 }
 
-/* The Spinning Mechanism */
 .spinner-window {
   position: relative;
-  height: 100%;
-  overflow: hidden; /* Hides the items above and below */
-  display: inline-block;
+  height: 3.5rem; 
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
 }
 
 .spinner-track {
@@ -100,10 +120,13 @@
   flex-direction: column;
   height: 100%;
   transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.15); 
+  margin-right: 0.5rem;
+  width: max-content;
+  justify-content: flex-start;
 }
 
 .spinner-item {
-  height: 100%; /* Matches line-height/height of the container */
+  height: 100%;
   display: flex;
   align-items: center;
   white-space: nowrap;

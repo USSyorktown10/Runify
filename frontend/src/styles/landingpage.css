@@ -1,0 +1,23 @@
+.landing-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--global-bg);
+}
+
+.landing-page h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-weight: bolder;
+}
+
+.landing-page p {
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  max-width: 600px;
+}
