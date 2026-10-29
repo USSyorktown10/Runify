@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { Topography}  from '../components/Topography';
 import { RunHero } from '../components/RunHero';
-import { TechText } from '../components/TechText';
+import { TechText } from '../components/common/TechText';
+import { Button } from '../components/Button';
 import '@/styles/style.css';
-import '@/styles/landingpage.css';
 
 export function LandingPage() {
     return (
@@ -39,6 +38,7 @@ export function LandingPage() {
                 />
                 <RunHero />
                 <p>A cool little thingy</p>
+                <Button variant="primary" size="medium" onClick={() => { window.location.href = "/register"; }}>Get Started</Button>
             </div>
             <div className='topo-bg'>
                 <Topography

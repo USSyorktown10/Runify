@@ -1,0 +1,41 @@
+.link {
+    text-decoration: none;
+}
+
+.logo {
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+    font-family: var(--font-sans);
+    font-weight: bold;
+    color: var(--global-text);
+    padding-left: 0.5rem;
+}
+
+.logo:hover {
+    color: var(--primary-color);
+}
+
+.sm {
+    height: 2rem;
+    width: 2rem;
+    font-size: 1.25rem;
+    line-height: 1.5rem;
+    vertical-align: middle;
+}
+
+.md {
+    height: 2.5rem;
+    width: 2.5rem;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    vertical-align: middle;
+}
+
+.lg {
+    height: 4rem;
+    width: 4rem;
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+    vertical-align: middle;
+}

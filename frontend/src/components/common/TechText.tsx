@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 
-import '@/styles/techtext.css';
+import './techtext.css';
 
 type Box = { x1: number; y1: number; x2: number; y2: number };
 type Art = { image: HTMLCanvasElement; left: number; top: number };
