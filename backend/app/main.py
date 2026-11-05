@@ -1,5 +1,11 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
-import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
+
+import backend.app.models.activity
+
+from app.api.v1 import router
 
 app = FastAPI()
 
