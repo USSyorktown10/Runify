@@ -8,7 +8,7 @@ from app.models.user import User  # noqa: F401 - registers User table with Base
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="My Backend")
+app = FastAPI(title="Runify")
 
 app.add_middleware(
     CORSMiddleware,

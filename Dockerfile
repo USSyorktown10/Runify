@@ -14,7 +14,9 @@ COPY pyproject.toml uv.lock ./
 
 # production deps
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-install-project --no-dev
+    uv sync --locked --no-install-project --no-dev \
+    --allow-insecure-host pypi.org \
+    --allow-insecure-host files.pythonhosted.org
 
 ENV PATH="/code/.venv/bin:$PATH"
 
@@ -26,4 +28,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["fastapi", "run", "app/main.py", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -23,12 +23,13 @@ dependencies = [
     "fitparse>=1.2.0",
     "gpxpy>=1.6.2",
     "polyline>=2.0.2",
-    "email-validator>=2.2.0"
+    "email-validator>=2.2.0",
+    "pyjwt>=2.15.1",
+    "pwdlib[argon2]>=0.4.2",
 ]
 
 [project.scripts]
 runify = "runify:main"
 
-[build-system]
-requires = ["uv_build>=0.13.8,<0.14.0"]
-build-backend = "uv_build"
+[tool.uv]
+package = false
