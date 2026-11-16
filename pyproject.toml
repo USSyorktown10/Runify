@@ -1,0 +1,34 @@
+[project]
+name = "Runify"
+version = "0.1.0"
+description = "Social platform for advanced running statistics"
+readme = "README.md"
+authors = [
+    { name = "USSyorktown10" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14.0",
+    "psycopg[binary]>=3.2.3",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
+    "python-multipart>=0.0.17",
+    "bcrypt>=4.0.0",
+    "python-jose[cryptography]>=3.3.0",
+    "httpx>=0.28.0",
+    "user-agents>=2.2.0",
+    "fitparse>=1.2.0",
+    "gpxpy>=1.6.2",
+    "polyline>=2.0.2",
+    "email-validator>=2.2.0"
+]
+
+[project.scripts]
+runify = "runify:main"
+
+[build-system]
+requires = ["uv_build>=0.13.8,<0.14.0"]
+build-backend = "uv_build"
