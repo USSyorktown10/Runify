@@ -3,7 +3,7 @@ from app.schemas.common import BaseSchema
 
 #Main
 class SummaryUser(BaseModel):
-    id: int
+    id: str
     username: str
     first_name: str
     last_name: str
@@ -13,7 +13,7 @@ class SummaryUser(BaseModel):
     profile_picture_url: str | None
     
 class DetailedUser(BaseModel):
-    id: int
+    id: str
     username: str
     first_name: str
     last_name: str
@@ -52,6 +52,7 @@ class SummaryStats(BaseModel):
     
 class PersonalRecord(BaseModel):
     distance_name: str
+    distance_meters: str
     time: float #seconds
     activity_id: int
     date: str
@@ -114,5 +115,5 @@ class UpdateUserStatsRequest(BaseModel):
     all_time_run_totals: float | None = None
 
 class UserResponse(BaseSchema):
-    id: int
+    id: str
     email: EmailStr

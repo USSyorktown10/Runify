@@ -5,7 +5,7 @@ from app.db.base import Base
 
 class Activity(Base):
     __tablename__ = "activites"
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[str] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     title: Mapped[str] = mapped_column(String(255), default="Untitled Run")
     description: Mapped[str] = mapped_column(Text, default="")

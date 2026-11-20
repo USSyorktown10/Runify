@@ -8,6 +8,24 @@ Runify is a Strava-esque platform with a goal of making many advanced metrics pa
 It also fixes many of the nice-to-have features that Strava does not (better workout visibility). We also plan to provide tools for coaches to assign workouts and
 for runners to mark their workouts as completing coach-defined workouts, as well as 3d visualizations of runs, and comparisons of metrics between athletes and activities.
 
+## Quick Start and Development
+
+Start from docker:
+```
+docker build -d up
+docker compose up --build
+```
+
+After making changes to the database:
+```
+docker compose down -v
+docker compose up db -d
+```
+To run app to build updated database:
+```
+uv run uvicorn app.main:app --reload
+```
+
 ## Current Status
 This project is currently in very early development. Algorithms, API spec, schema, and endpoints and finished or nearly finished, with algs needing more attention. 
 Now that the listed objectives have been completed, we are now building the frontend and backend for Runify.
