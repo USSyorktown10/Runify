@@ -76,7 +76,7 @@ class UserStats(Base):
     
     user: Mapped["User"] = relationship(back_populates="stats")
     
-class PersonalRecords(Base):
+class PersonalRecord(Base):
     __tablename__ = "personal_records"
     
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid())
@@ -84,5 +84,5 @@ class PersonalRecords(Base):
     distance_name: Mapped[str] = mapped_column(String(32))
     distance_meters: Mapped[float] = mapped_column(Float)
     time_seconds: Mapped[int] = mapped_column(Integer)
-    activity_id: Mapped[str] = mapped_column(ForeignKey("activities.id", ondelete="SETNULL"), nullable=True)
+    activity_id: Mapped[str] = mapped_column(ForeignKey("activities.id", ondelete="SET NULL"), nullable=True)
     achieved_date: Mapped[datetime] = mapped_column(DateTime(timezone=True)) 
